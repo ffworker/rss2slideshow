@@ -41,7 +41,7 @@ def get_feeds(primary_url, primary_label, feed_file):
 
 
 def mix_feeds(groups):
-    """Take one slide from each feed at a time (no feed hogging the screen)."""
+    """Take one article from each feed at a time (no feed hogging the screen)."""
     mixed = []
     for i in range(max((len(group) for group in groups), default=0)):
         for group in groups:
