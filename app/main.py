@@ -241,6 +241,7 @@ def news():
                 articles.append(
                     publish(render(title, summary[:300], "NACHRICHTEN", source_name), "news")
                 )
+            logging.info("RSS loaded: %s (%d slides)", source_name, len(articles))
             groups.append(articles)
         except Exception:
             logging.exception("could not update RSS feed: %s", url)
