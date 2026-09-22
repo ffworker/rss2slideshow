@@ -48,26 +48,42 @@ def wrap(draw, value, fnt, width):
     return lines + ([current] if current else [])
 
 
+def fit_lines(draw, text, max_width, max_lines, starting_size, min_size=24, bold=False):
+    for size in range(starting_size, min_size - 1, -2):
+        chosen = font(size, bold)
+        lines = wrap(draw, text, chosen, max_width)
+        if len(lines) <= max_lines:
+            return chosen, lines
+    chosen = font(min_size, bold)
+    lines = wrap(draw, text, chosen, max_width)[:max_lines]
+    if lines and len(lines) == max_lines:
+        last = lines[-1]
+        while last and draw.textbbox((0, 0), last + "…", font=chosen)[2] > max_width:
+            last = last[:-1]
+        lines[-1] = last.rstrip() + "…"
+    return chosen, lines
+
+
 def render(title, subtitle="", kind="NEWS"):
     w, h = int(CFG.get("slide_width", 1920)), int(CFG.get("slide_height", 1080))
-    image = Image.new("RGB", (w, h), "#122036")
+    image = Image.new("RGB", (w, h), "#f5f5f2")
     draw = ImageDraw.Draw(image)
-    draw.rectangle((0, 0, w, 22), fill="#63a9ff")
-    draw.text((90, 85), str(CFG.get("company_name", "Company")), font=font(44, True), fill="#b6c9e2")
-    draw.text((90, 215), kind, font=font(37, True), fill="#63a9ff")
-    y = 300
-    for line in wrap(draw, title, font(80, True), w - 180)[:5]:
-        if y + 105 > h - 90:
+    pad = int(w * .05)
+    draw.text((pad, int(h * .07)), kind, font=font(int(h * .035), True), fill="#555555")
+    draw.line((pad, int(h * .14), w - pad, int(h * .14)), fill="#bbbbbb", width=2)
+    title_font, lines = fit_lines(draw, title, w - 2 * pad, 5, int(h * .074), int(h * .036), True)
+    y = int(h * .23)
+    step = int(title_font.size * 1.32)
+    for line in lines:
+        draw.text((pad, y), line, font=title_font, fill="#181818")
+        y += step
+    summary_font, summary_lines = fit_lines(draw, subtitle, w - 2 * pad, 4, int(h * .039), int(h * .025))
+    y = max(y + int(h * .045), int(h * .7))
+    for line in summary_lines:
+        if y + summary_font.size > int(h * .9):
             break
-        draw.text((90, y), line, font=font(80, True), fill="white")
-        y += 105
-    y += 35
-    for line in wrap(draw, subtitle, font(39), w - 180)[:5]:
-        if y + 57 > h - 90:
-            break
-        draw.text((90, y), line, font=font(39), fill="#c9d4e3")
-        y += 57
-    draw.text((90, h - 75), datetime.now(TZ).strftime("%d.%m.%Y  %H:%M"), font=font(32), fill="#a4b6cf")
+        draw.text((pad, y), line, font=summary_font, fill="#454545")
+        y += int(summary_font.size * 1.4)
     buffer = io.BytesIO()
     image.save(buffer, "JPEG", quality=89, optimize=True)
     return buffer.getvalue()
@@ -143,25 +159,45 @@ def news():
 
 def render_news(title, summary, image_bytes):
     w, h = int(CFG.get("slide_width", 1920)), int(CFG.get("slide_height", 1080))
-    canvas = Image.new("RGB", (w, h), "#122036")
+    canvas = Image.new("RGB", (w, h), "#f5f5f2")
+    draw = ImageDraw.Draw(canvas)
+    margin = int(w * .045)
+    gap = int(w * .035)
+    image_w = int(w * .43)
+    top = int(h * .17)
+    bottom = int(h * .89)
+    image_h = bottom - top
+    text_x = margin + image_w + gap
+    text_width = w - margin - text_x
+    # keep image proportions, same top edge as text; no stretching or overlap.
     with Image.open(io.BytesIO(image_bytes)) as source:
         picture = source.convert("RGB")
-        picture.thumbnail((int(w * .45), int(h * .7)))
-        canvas.paste(picture, (w - picture.width - 65, (h - picture.height) // 2))
-    draw = ImageDraw.Draw(canvas)
-    draw.text((65, 65), "NEWS · " + CFG.get("news_source_label", "RSS"), font=font(36, True), fill="#80b9ff")
-    y = 220
-    for line in wrap(draw, title, font(58, True), int(w * .52))[:6]:
-        draw.text((65, y), line, font=font(58, True), fill="white")
-        y += 78
-    y += 30
-    for line in wrap(draw, summary, font(29), int(w * .52))[:5]:
-        if y > h - 90:
-            break
-        draw.text((65, y), line, font=font(29), fill="#d1dae8")
-        y += 44
+        picture.thumbnail((image_w, image_h), Image.Resampling.LANCZOS)
+        canvas.paste(picture, (margin + (image_w - picture.width) // 2, top))
+    label = str(CFG.get("news_source_label", "RSS"))
+    draw.text((margin, int(h * .065)), label, font=font(int(h * .034), True), fill="#555555")
+    draw.line((margin, int(h * .13), w - margin, int(h * .13)), fill="#bbbbbb", width=2)
+    title_font, title_lines = fit_lines(
+        draw, title, text_width, 6, int(h * .054), int(h * .033), True
+    )
+    y = top
+    for line in title_lines:
+        draw.text((text_x, y), line, font=title_font, fill="#181818")
+        y += int(title_font.size * 1.25)
+    y += int(h * .035)
+    available = max(0, bottom - y)
+    if available:
+        summary_font, summary_lines = fit_lines(
+            draw, summary, text_width, max(1, available // int(h * .043)),
+            int(h * .028), int(h * .021)
+        )
+        for line in summary_lines:
+            if y + summary_font.size > bottom:
+                break
+            draw.text((text_x, y), line, font=summary_font, fill="#444444")
+            y += int(summary_font.size * 1.33)
     buffer = io.BytesIO()
-    canvas.save(buffer, "JPEG", quality=88)
+    canvas.save(buffer, "JPEG", quality=88, optimize=True)
     return buffer.getvalue()
 
 
