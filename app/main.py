@@ -7,7 +7,6 @@ from pathlib import Path
 import re
 import threading
 import time
-from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import feedparser
@@ -26,9 +25,15 @@ SLIDES = OUT / "slides"
 SLIDES.mkdir(parents=True, exist_ok=True)
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
-TZ = ZoneInfo("Europe/Berlin")
+DISPLAY_TZ = os.environ.get("DISPLAY_TZ", os.environ.get("TZ", "Europe/Berlin"))
+TZ = ZoneInfo(DISPLAY_TZ)
+BRAND = str(CFG.get("brand_name") or CFG.get("company_name") or "rss2slideshow")[:45]
+ACCENT = str(CFG.get("accent_color", "#8b3932"))
+if not re.fullmatch(r"#[0-9a-fA-F]{6}", ACCENT):
+    raise ValueError("accent_color needs to be a hex color like #8b3932")
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+SERIF_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
 
 
 def font(size, bold=False):
@@ -64,55 +69,91 @@ def fit_lines(draw, text, max_width, max_lines, starting_size, min_size=24, bold
     return chosen, lines
 
 
-# kept deliberately simple, this is a slideshow not a web dashboard
-PAPER = "#f4f2ed"
-INK = "#272923"
-MUTED = "#60645e"
-ACCENT = "#536d62"
-RULE = "#c9c9c1"
+# meant to feel like a simple news page, not a dashboard
+PAPER = "#f8f7f3"
+INK = "#252525"
+MUTED = "#65635e"
+RULE = "#c9c5be"
 
 
-def slide_header(draw, w, h, label):
-    margin = int(w * .045)
-    label_font = font(max(17, int(h * .031)), True)
-    draw.text((margin, int(h * .06)), str(label).upper(), font=label_font, fill=ACCENT)
-    date_text = datetime.now(TZ).strftime("%d.%m.%Y")
-    date_font = font(max(14, int(h * .026)))
-    date_width = draw.textbbox((0, 0), date_text, font=date_font)[2]
-    draw.text((w - margin - date_width, int(h * .064)), date_text, font=date_font, fill=MUTED)
-    y = int(h * .13)
-    draw.line((margin, y, w - margin, y), fill=RULE, width=max(1, int(h * .002)))
-    draw.line((margin, y, margin + int(w * .085), y), fill=ACCENT, width=max(2, int(h * .004)))
-    footer = int(h * .925)
-    draw.line((margin, footer, w - margin, footer), fill=RULE, width=max(1, int(h * .0015)))
+def headline_font(size):
+    if Path(SERIF_BOLD).exists():
+        return ImageFont.truetype(SERIF_BOLD, size)
+    return font(size, True)
 
 
-def render(title, subtitle="", kind="NEWS"):
+def fit_headline(draw, value, width, max_lines, starting_size, min_size):
+    for size in range(starting_size, min_size - 1, -2):
+        chosen = headline_font(size)
+        lines = wrap(draw, value, chosen, width)
+        if len(lines) <= max_lines:
+            return chosen, lines
+    chosen = headline_font(min_size)
+    lines = wrap(draw, value, chosen, width)[:max_lines]
+    if lines:
+        last = lines[-1]
+        while last and draw.textbbox((0, 0), last + "…", font=chosen)[2] > width:
+            last = last[:-1]
+        lines[-1] = last.rstrip() + "…"
+    return chosen, lines
+
+
+def slide_header(canvas, category, source=""):
+    draw = ImageDraw.Draw(canvas)
+    w, h = canvas.size
+    left = int(w * .045)
+    top = int(h * .051)
+    brand_x = left
+    logo_path = ROOT / "assets" / "logo.png"
+    if logo_path.is_file():
+        try:
+            with Image.open(logo_path) as source_image:
+                mark = source_image.convert("RGBA")
+                mark.thumbnail((int(w * .061), int(h * .065)), Image.Resampling.LANCZOS)
+                canvas.paste(mark, (left, top), mark)
+                brand_x += int(w * .074)
+        except (OSError, ValueError):
+            logging.warning("could not read the logo, using text instead")
+    brand_font, brand_lines = fit_lines(
+        draw, BRAND, max(80, int(w * .63) - brand_x), 1,
+        max(18, int(h * .041)), max(14, int(h * .022)), True
+    )
+    if brand_lines:
+        draw.text((brand_x, top), brand_lines[0], font=brand_font, fill=INK)
+    draw.text((left, int(h * .153)), str(category).upper(), font=font(int(h * .026), True), fill=ACCENT)
+    line_y = int(h * .206)
+    draw.line((left, line_y, w - left, line_y), fill=RULE, width=max(1, int(h * .002)))
+    draw.line((left, line_y, left + int(w * .065), line_y), fill=ACCENT, width=max(2, int(h * .004)))
+    footer_y = int(h * .92)
+    draw.line((left, footer_y, w - left, footer_y), fill=RULE, width=max(1, int(h * .002)))
+    if source:
+        draw.text((left, int(h * .939)), "Quelle: " + str(source)[:70],
+                  font=font(int(h * .021)), fill=MUTED)
+
+
+def render(title, subtitle="", kind="NEWS", source=""):
     w, h = int(CFG.get("slide_width", 1920)), int(CFG.get("slide_height", 1080))
-    image = Image.new("RGB", (w, h), PAPER)
-    draw = ImageDraw.Draw(image)
-    pad = int(w * .05)
-    slide_header(draw, w, h, kind)
-    title_font, lines = fit_lines(draw, title, w - 2 * pad, 5, int(h * .071), int(h * .036), True)
-    y = int(h * .22)
+    canvas = Image.new("RGB", (w, h), PAPER)
+    slide_header(canvas, kind, source)
+    draw = ImageDraw.Draw(canvas)
+    pad = int(w * .052)
+    title_font, lines = fit_headline(draw, title, w - 2 * pad, 5, int(h * .072), int(h * .036))
+    y = int(h * .26)
     for line in lines:
+        if y + title_font.size > int(h * .68):
+            break
         draw.text((pad, y), line, font=title_font, fill=INK)
-        y += int(title_font.size * 1.32)
-    summary_top = max(y + int(h * .04), int(h * .68))
-    if subtitle and summary_top < int(h * .88):
-        draw.line((pad, summary_top - int(h * .021), pad + int(w * .06), summary_top - int(h * .021)), fill=ACCENT, width=max(2, int(h * .003)))
-        remaining = int(h * .88) - summary_top
-        summary_font, summary_lines = fit_lines(
-            draw, subtitle, w - 2 * pad, max(1, remaining // int(h * .048)),
-            int(h * .036), int(h * .024)
-        )
+        y += int(title_font.size * 1.3)
+    y = max(y + int(h * .04), int(h * .68))
+    if subtitle and y < int(h * .87):
+        summary_font, summary_lines = fit_lines(draw, subtitle, w - 2 * pad, 4, int(h * .034), int(h * .023))
         for line in summary_lines:
-            if summary_top + summary_font.size > int(h * .88):
+            if y + summary_font.size > int(h * .885):
                 break
-            draw.text((pad, summary_top), line, font=summary_font, fill=MUTED)
-            summary_top += int(summary_font.size * 1.4)
+            draw.text((pad, y), line, font=summary_font, fill=MUTED)
+            y += int(summary_font.size * 1.35)
     buffer = io.BytesIO()
-    image.save(buffer, "JPEG", quality=89, optimize=True)
+    canvas.save(buffer, "JPEG", quality=89, optimize=True)
     return buffer.getvalue()
 
 
@@ -180,46 +221,42 @@ def news():
                 continue
             except Exception:
                 logging.exception("Could not load image for %s", title)
-        results.append(publish(render(title, summary[:300] + " | Quelle: " + CFG.get("news_source_label", "RSS"), "NEWS"), "news"))
+        results.append(publish(render(title, summary[:300], "NACHRICHTEN", CFG.get("news_source_label", "RSS")), "news"))
     return results
 
 
 def render_news(title, summary, image_bytes):
     w, h = int(CFG.get("slide_width", 1920)), int(CFG.get("slide_height", 1080))
     canvas = Image.new("RGB", (w, h), PAPER)
+    slide_header(canvas, "NACHRICHTEN", CFG.get("news_source_label", "RSS"))
     draw = ImageDraw.Draw(canvas)
     margin = int(w * .045)
-    gap = int(w * .038)
+    gap = int(w * .035)
     image_w = int(w * .425)
-    top = int(h * .18)
-    bottom = int(h * .88)
-    image_h = bottom - top
+    top = int(h * .25)
+    image_h = int(h * .59)
+    bottom = int(h * .86)
     text_x = margin + image_w + gap
     text_width = w - margin - text_x
-
-    slide_header(draw, w, h, CFG.get("news_source_label", "RSS"))
-
-    # light frame so landscape and portrait feed pictures both have a tidy edge
-    draw.rectangle((margin, top, margin + image_w, bottom), fill="#e9e8e1", outline=RULE, width=max(1, int(h * .002)))
+    # keep the image proportions, no giant cards or gradients
+    draw.rectangle((margin, top, margin + image_w, top + image_h), fill="#ebe9e3", outline=RULE, width=max(1, int(h * .002)))
     with Image.open(io.BytesIO(image_bytes)) as source:
         picture = source.convert("RGB")
-        picture.thumbnail((image_w - 16, image_h - 16), Image.Resampling.LANCZOS)
-        canvas.paste(
-            picture,
-            (margin + (image_w - picture.width) // 2, top + (image_h - picture.height) // 2)
-        )
+        picture.thumbnail((image_w - 12, image_h - 12), Image.Resampling.LANCZOS)
+        canvas.paste(picture, (margin + (image_w - picture.width) // 2,
+                               top + (image_h - picture.height) // 2))
 
-    title_font, title_lines = fit_lines(draw, title, text_width, 6, int(h * .054), int(h * .032), True)
+    title_font, title_lines = fit_headline(draw, title, text_width, 6, int(h * .053), int(h * .03))
     y = top
     for line in title_lines:
+        if y + title_font.size > int(h * .76):
+            break
         draw.text((text_x, y), line, font=title_font, fill=INK)
-        y += int(title_font.size * 1.27)
-    y += int(h * .052)
-    available = bottom - y
-    if summary and available > int(h * .05):
-        draw.line((text_x, y - int(h * .023), text_x + int(w * .045), y - int(h * .023)), fill=ACCENT, width=max(2, int(h * .003)))
+        y += int(title_font.size * 1.28)
+    y += int(h * .035)
+    if summary and y < bottom:
         summary_font, summary_lines = fit_lines(
-            draw, summary, text_width, max(1, available // int(h * .04)),
+            draw, summary, text_width, max(1, (bottom - y) // int(h * .039)),
             int(h * .028), int(h * .021)
         )
         for line in summary_lines:
@@ -279,9 +316,6 @@ def refresh():
             names.extend(generator())
         except Exception:
             logging.exception("Slide generator failed: %s", generator.__name__)
-    if CFG.get("clock", {}).get("enabled", False):
-        now = datetime.now(TZ)
-        names.append(publish(render(now.strftime("%H:%M"), now.strftime("%A, %d.%m.%Y"), "UHRZEIT"), "clock"))
     if not names:
         return
     tmp = OUT / "inventory.txt.tmp"
@@ -328,6 +362,16 @@ def playlist():
     if not path.exists():
         return jsonify({"items": []})
     return jsonify({"items": ["/slides/" + line.strip().rsplit("/", 1)[-1] for line in path.read_text().splitlines() if line.strip()]})
+
+
+@app.get("/api/display-config")
+def display_config():
+    # browser clock uses this time, the selected timezone and a ticking client timer
+    return jsonify({
+        "timezone": DISPLAY_TZ,
+        "server_time_ms": int(time.time() * 1000),
+        "slide_seconds": max(3, min(300, int(os.environ.get("SLIDE_SECONDS", "15"))))
+    })
 
 
 @app.get("/healthz")
