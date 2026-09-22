@@ -369,6 +369,7 @@ def display_config():
     # browser clock uses this time, the selected timezone and a ticking client timer
     return jsonify({
         "timezone": DISPLAY_TZ,
+        "brand_name": BRAND,
         "server_time_ms": int(time.time() * 1000),
         "slide_seconds": max(3, min(300, int(os.environ.get("SLIDE_SECONDS", "15"))))
     })
