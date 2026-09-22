@@ -95,11 +95,17 @@ def news():
         # many rss feeds contain thumbnails in media_content or media_thumbnail.
         # only retrieve images from the feed, never scrape article pages.
         picture = None
-        for media in entry.get("media_content", []) + entry.get("media_thumbnail", []) + entry.get("links", []):
-            url = media.get("url", "")
+        # some feeds (including hessenschau) put article jpgs in enclosures.
+        for media in (
+            entry.get("media_content", [])
+            + entry.get("media_thumbnail", [])
+            + entry.get("enclosures", [])
+        ):
+            url = media.get("url") or media.get("href") or ""
             if url.startswith("https://") and (
-                media.get("type", "").startswith("image/") or
-                media.get("medium") == "image" or media in entry.get("media_thumbnail", [])
+                media.get("type", "").startswith("image/")
+                or media.get("medium") == "image"
+                or media in entry.get("media_thumbnail", [])
             ):
                 picture = url
                 break
