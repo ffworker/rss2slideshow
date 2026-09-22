@@ -5,13 +5,10 @@ services:
     environment:
       TZ: ${DISPLAY_TZ:-Europe/Berlin}
       DISPLAY_TZ: ${DISPLAY_TZ:-Europe/Berlin}
-      SLIDE_SECONDS: ${SLIDE_SECONDS:-15}
+      SLIDE_SECONDS: ${SLIDE_SECONDS:-20}
     ports:
       - "${BIND_IP:-127.0.0.1}:8085:8080"
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ./content:/app/content:ro
       - ./assets:/app/assets:ro
-      - ./output:/app/output
-      # mount an already-mounted SMB/NFS share here if wanted. see config media_mounts.
-      - ${MEDIA_DIR:-./content/photos}:/app/mounts/external:ro
