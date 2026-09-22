@@ -1,0 +1,14 @@
+public_url: http://DISPLAY_HOST_IP:8085
+rss_url: https://www.hessenschau.de/index.rss
+max_articles: 5
+refresh_minutes: 10
+slide_width: 1920
+slide_height: 1080
+company_name: Your Company
+weather:
+  enabled: false
+  latitude: 0.0
+  longitude: 0.0
+  label: Your City
+clock:
+  enabled: true
