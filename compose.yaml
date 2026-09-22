@@ -1,0 +1,12 @@
+services:
+  signage:
+    build: .
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Berlin
+    ports:
+      - "${BIND_IP:-127.0.0.1}:8085:8080"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./content:/app/content:ro
+      - ./output:/app/output
