@@ -1,0 +1,7 @@
+# drop URLs into content/feeds.txt, one per line. that's it.
+# Name is optional, if missing we'll use the title from the feed itself.
+# You can add this while docker is running. changes show up on the next refresh.
+# old rss_url in config.yaml stays enabled; duplicate URLs are skipped.
+#
+# https://example.org/news.rss
+# Local news | https://example.org/another-feed.xml
