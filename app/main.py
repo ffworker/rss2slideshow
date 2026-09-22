@@ -4,6 +4,10 @@ import io
 import logging
 import os
 from pathlib import Path
+from html import unescape
+from ipaddress import ip_address
+import socket
+from urllib.parse import urlsplit
 import re
 import threading
 import time
@@ -14,6 +18,8 @@ from flask import Flask, abort, send_from_directory, jsonify
 from PIL import Image, ImageDraw, ImageFont
 import requests
 import yaml
+
+from app.feeds import get_feeds, mix_feeds
 
 ROOT = Path("/app") if Path("/app/config.yaml").exists() else Path(__file__).resolve().parents[1]
 CFG = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
@@ -166,69 +172,85 @@ def publish(data, prefix):
 
 
 def news():
-    response = requests.get(CFG["rss_url"], timeout=20, headers={"User-Agent": "rss2slideshow/0.1"})
-    response.raise_for_status()
-    entries = feedparser.parse(response.content).entries
-    if not entries:
-        raise ValueError("No RSS entries found")
-    results = []
-    for entry in entries[:int(CFG.get("max_articles", 5))]:
-        title = entry.get("title", "").strip()
-        if not title:
-            continue
-        # many rss feeds contain thumbnails in media_content or media_thumbnail.
-        # only retrieve images from the feed, never scrape article pages.
-        picture = None
-        # some feeds (including hessenschau) put article jpgs in enclosures.
-        for media in (
-            entry.get("media_content", [])
-            + entry.get("media_thumbnail", [])
-            + entry.get("enclosures", [])
-        ):
-            url = media.get("url") or media.get("href") or ""
-            if url.startswith("https://") and (
-                media.get("type", "").startswith("image/")
-                or media.get("medium") == "image"
-                or media in entry.get("media_thumbnail", [])
-            ):
-                picture = url
-                break
-        summary = re.sub(r"<[^>]+>", " ", entry.get("summary", ""))
-        summary = re.sub(r"\\s+", " ", summary).strip()
-        # images must be explicitly enabled: check provider rights before displaying at work.
-        if picture and CFG.get("news_images", False):
-            try:
-                from urllib.parse import urlparse
-                from PIL import UnidentifiedImageError
-                from ipaddress import ip_address
-                import socket
-                host = urlparse(picture).hostname
-                addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
-                if not addresses or any(not ip_address(addr[4][0]).is_global for addr in addresses):
-                    raise ValueError("non-public image host")
-                resp = requests.get(picture, timeout=10, stream=True)
-                resp.raise_for_status()
-                if not resp.headers.get("Content-Type", "").lower().startswith("image/"):
-                    raise ValueError("not an image")
-                data = b""
-                for chunk in resp.iter_content(65536):
-                    data += chunk
-                    if len(data) > 5_000_000:
-                        raise ValueError("image too large")
-                with Image.open(io.BytesIO(data)) as img:
-                    img.verify()
-                results.append(publish(render_news(title, summary, data), "news"))
-                continue
-            except Exception:
-                logging.exception("Could not load image for %s", title)
-        results.append(publish(render(title, summary[:300], "NACHRICHTEN", CFG.get("news_source_label", "RSS")), "news"))
-    return results
+    # rss_url is the old/default source. additional feeds live in content/feeds.txt
+    # read that file every refresh, so adding/removing a URL doesn't need a restart
+    sources = get_feeds(
+        CFG.get("rss_url"), CFG.get("news_source_label", "RSS"),
+        ROOT / "content" / "feeds.txt"
+    )
+    groups = []
+    for given_label, url in sources:
+        try:
+            response = requests.get(
+                url, timeout=20, headers={"User-Agent": "rss2slideshow/0.1"}
+            )
+            response.raise_for_status()
+            feed = feedparser.parse(response.content)
+            if not feed.entries:
+                raise ValueError("No RSS entries found")
+            source_name = (
+                given_label or str(feed.feed.get("title", "")).strip()
+                or urlsplit(url).hostname or "RSS"
+            )[:70]
+            articles = []
+            for entry in feed.entries[:max(1, int(CFG.get("max_articles", 5)))]:
+                title = entry.get("title", "").strip()
+                if not title:
+                    continue
+                picture = None
+                # feeds disagree about where their image is (hessenschau uses enclosures).
+                for media in (
+                    entry.get("media_content", [])
+                    + entry.get("media_thumbnail", [])
+                    + entry.get("enclosures", [])
+                ):
+                    image_url = media.get("url") or media.get("href") or ""
+                    if image_url.startswith("https://") and (
+                        media.get("type", "").startswith("image/")
+                        or media.get("medium") == "image"
+                        or media in entry.get("media_thumbnail", [])
+                    ):
+                        picture = image_url
+                        break
+                summary = re.sub(r"<[^>]+>", " ", entry.get("summary", ""))
+                summary = re.sub(r"\s+", " ", unescape(summary)).strip()
+                if picture and CFG.get("news_images", False):
+                    try:
+                        host = urlsplit(picture).hostname
+                        addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+                        if not addresses or any(
+                            not ip_address(address[4][0]).is_global
+                            for address in addresses
+                        ):
+                            raise ValueError("non-public image host")
+                        image_response = requests.get(picture, timeout=10, stream=True)
+                        image_response.raise_for_status()
+                        if not image_response.headers.get("Content-Type", "").lower().startswith("image/"):
+                            raise ValueError("not an image")
+                        data = b""
+                        for chunk in image_response.iter_content(65536):
+                            data += chunk
+                            if len(data) > 5_000_000:
+                                raise ValueError("image too large")
+                        with Image.open(io.BytesIO(data)) as image:
+                            image.verify()
+                        articles.append(publish(render_news(title, summary, data, source_name), "news"))
+                        continue
+                    except Exception:
+                        logging.exception("could not load image for %s", title)
+                articles.append(
+                    publish(render(title, summary[:300], "NACHRICHTEN", source_name), "news")
+                )
+            groups.append(articles)
+        except Exception:
+            logging.exception("could not update RSS feed: %s", url)
+    return mix_feeds(groups)
 
 
-def render_news(title, summary, image_bytes):
+def render_news(title, summary, image_bytes, source_name="RSS"):
     w, h = int(CFG.get("slide_width", 1920)), int(CFG.get("slide_height", 1080))
     canvas = Image.new("RGB", (w, h), PAPER)
-    slide_header(canvas, "NACHRICHTEN", CFG.get("news_source_label", "RSS"))
+    slide_header(canvas, "NACHRICHTEN", source_name)
     draw = ImageDraw.Draw(canvas)
     margin = int(w * .045)
     gap = int(w * .035)
