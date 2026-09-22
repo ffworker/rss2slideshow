@@ -1,6 +1,11 @@
 public_url: http://DISPLAY_HOST_IP:8085
 rss_url: https://www.hessenschau.de/index.rss
 max_articles: 5
+news_source_label: RSS
+# only turn this on for feeds whose image usage rights you checked
+news_images: false
+# name of folder mounted under /app/mounts (see MEDIA_DIR in compose)
+media_mounts: [external]
 refresh_minutes: 10
 slide_width: 1920
 slide_height: 1080
