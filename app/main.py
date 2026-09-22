@@ -34,6 +34,8 @@ USER_AGENT = "rss2slideshow/0.2"
 MAX_PER_FEED = max(1, min(30, int(CFG.get("max_articles", 5))))
 LOG = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+if CFG.get("rss_url") or CFG.get("news_source_label"):
+    LOG.warning("rss_url/news_source_label in config.yaml are old settings and are ignored; move that feed into content/feeds.txt")
 
 app = Flask(__name__)
 lock = threading.Lock()
