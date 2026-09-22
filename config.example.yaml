@@ -9,11 +9,11 @@ media_mounts: [external]
 refresh_minutes: 10
 slide_width: 1920
 slide_height: 1080
-company_name: Your Company
+brand_name: rss2slideshow
+# optional: drop your own logo into assets/logo.png
+accent_color: "#8b3932"
 weather:
   enabled: false
   latitude: 0.0
   longitude: 0.0
   label: Your City
-clock:
-  enabled: true
