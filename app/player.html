@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>rss2slideshow</title>
 <style>
-:root { color-scheme: light; }
+:root { color-scheme: light; --accent: #8b3932; }
 * { box-sizing: border-box; }
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
 body { background: #f8f7f3; color: #252525; font-family: Arial, Helvetica, sans-serif; }
@@ -14,12 +14,12 @@ body { background: #f8f7f3; color: #252525; font-family: Arial, Helvetica, sans-
 #clock {
   position: fixed; z-index: 2; right: 4.5vw; top: 4.8vh;
   min-width: 175px; padding: .25rem .55rem .35rem; text-align: right;
-  background: rgba(248,247,243,.97); border-bottom: 2px solid #8b3932;
+  background: rgba(248,247,243,.97); border-bottom: 2px solid var(--accent);
   font-variant-numeric: tabular-nums; line-height: 1.3;
 }
 #today { display: block; font-size: clamp(.7rem, 1vw, 1rem); color: #65635e; }
 #time { display: block; font-size: clamp(1.05rem, 1.6vw, 1.75rem); font-weight: 600; letter-spacing: .02em; }
-#status { display: none; position: fixed; bottom: 2vh; left: 3vw; background: #f8f7f3; padding: .5rem; color: #8b3932; }
+#status { display: none; position: fixed; bottom: 2vh; left: 3vw; background: #f8f7f3; padding: .5rem; color: var(--accent); }
 @media (max-width: 650px) { #clock { top: 2vh; right: 2vw; min-width: 0; } }
 </style>
 </head>
@@ -31,7 +31,7 @@ body { background: #f8f7f3; color: #252525; font-family: Arial, Helvetica, sans-
 <script>
 let items = [], index = 0, last = "";
 let timezone = "Europe/Berlin", serverMs = null, syncAt = null;
-let slideMs = 15000, slideTimer = null;
+let slideMs = 15000, slideTimer = null, failedSlides = 0;
 const image = document.getElementById("slide");
 const empty = document.getElementById("empty");
 const status = document.getElementById("status");
@@ -69,6 +69,9 @@ async function loadDisplaySettings() {
     syncAt = performance.now();
     const name = String(settings.brand_name || "").trim();
     if (name) document.title = name;
+    if (/^#[0-9a-fA-F]{6}$/.test(settings.accent_color || "")) {
+      document.documentElement.style.setProperty("--accent", settings.accent_color);
+    }
     const seconds = Number(settings.slide_seconds);
     const newDuration = Number.isFinite(seconds) && seconds >= 3 ? seconds * 1000 : 15000;
     if (!slideTimer || slideMs !== newDuration) {
@@ -115,7 +118,14 @@ function show() {
   image.style.display = "block";
 }
 
-image.onerror = () => { error("could not load this slide"); last = ""; show(); };
+image.onload = () => { failedSlides = 0; };
+image.onerror = () => {
+  failedSlides++;
+  error("could not load this slide");
+  if (failedSlides >= items.length) { image.style.display = "none"; return; }
+  last = "";
+  show();
+};
 loadDisplaySettings();
 updatePlaylist();
 updateClock();
