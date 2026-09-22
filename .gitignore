@@ -1,0 +1,12 @@
+config.yaml
+.env
+output/
+__pycache__/
+.pytest_cache/
+.venv/
+content/company/*
+!content/company/.gitkeep
+content/photos/*
+!content/photos/.gitkeep
+assets/*
+!assets/.gitkeep
