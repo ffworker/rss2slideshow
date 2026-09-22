@@ -1,13 +1,10 @@
-# change the brand / accent color without editing the app
+# stuff about the kiosk itself, NOT its feed list.
+# all rss sources go into content/feeds.txt (copy the example first)
 brand_name: rss2slideshow
 accent_color: "#8b3932"
 
-# default/first feed. add more in content/feeds.txt, one URL per line.
-# want ONLY feeds.txt? set rss_url to "" and put all your feeds there.
-rss_url: https://www.hessenschau.de/index.rss
-news_source_label: Hessenschau
-max_articles: 5
+max_articles: 5     # per feed
 refresh_minutes: 10
 
-# turn on after checking the image usage rights for your feeds
+# only enable after checking the feeds' image usage rights for your display
 news_images: false
