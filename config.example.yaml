@@ -1,19 +1,13 @@
-public_url: http://DISPLAY_HOST_IP:8085
-rss_url: https://www.hessenschau.de/index.rss
-max_articles: 5
-news_source_label: RSS
-# only turn this on for feeds whose image usage rights you checked
-news_images: false
-# name of folder mounted under /app/mounts (see MEDIA_DIR in compose)
-media_mounts: [external]
-refresh_minutes: 10
-slide_width: 1920
-slide_height: 1080
+# change the brand / accent color without editing the app
 brand_name: rss2slideshow
-# optional: drop your own logo into assets/logo.png
 accent_color: "#8b3932"
-weather:
-  enabled: false
-  latitude: 0.0
-  longitude: 0.0
-  label: Your City
+
+# default/first feed. add more in content/feeds.txt, one URL per line.
+# want ONLY feeds.txt? set rss_url to "" and put all your feeds there.
+rss_url: https://www.hessenschau.de/index.rss
+news_source_label: Hessenschau
+max_articles: 5
+refresh_minutes: 10
+
+# turn on after checking the image usage rights for your feeds
+news_images: false
