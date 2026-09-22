@@ -11,7 +11,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import feedparser
-from flask import Flask, abort, send_from_directory
+from flask import Flask, abort, send_from_directory, jsonify
 from PIL import Image, ImageDraw, ImageFont
 import requests
 import yaml
@@ -87,11 +87,76 @@ def news():
     entries = feedparser.parse(response.content).entries
     if not entries:
         raise ValueError("No RSS entries found")
-    return [
-        publish(render(entry.get("title", "").strip(), "Quelle: hessenschau.de", "NACHRICHTEN"), "news")
-        for entry in entries[:int(CFG.get("max_articles", 5))]
-        if entry.get("title", "").strip()
-    ]
+    results = []
+    for entry in entries[:int(CFG.get("max_articles", 5))]:
+        title = entry.get("title", "").strip()
+        if not title:
+            continue
+        # many rss feeds contain thumbnails in media_content or media_thumbnail.
+        # only retrieve images from the feed, never scrape article pages.
+        picture = None
+        for media in entry.get("media_content", []) + entry.get("media_thumbnail", []) + entry.get("links", []):
+            url = media.get("url", "")
+            if url.startswith("https://") and (
+                media.get("type", "").startswith("image/") or
+                media.get("medium") == "image" or media in entry.get("media_thumbnail", [])
+            ):
+                picture = url
+                break
+        summary = re.sub(r"<[^>]+>", " ", entry.get("summary", ""))
+        summary = re.sub(r"\\s+", " ", summary).strip()
+        # images must be explicitly enabled: check provider rights before displaying at work.
+        if picture and CFG.get("news_images", False):
+            try:
+                from urllib.parse import urlparse
+                from PIL import UnidentifiedImageError
+                from ipaddress import ip_address
+                import socket
+                host = urlparse(picture).hostname
+                addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+                if not addresses or any(not ip_address(addr[4][0]).is_global for addr in addresses):
+                    raise ValueError("non-public image host")
+                resp = requests.get(picture, timeout=10, stream=True)
+                resp.raise_for_status()
+                if not resp.headers.get("Content-Type", "").lower().startswith("image/"):
+                    raise ValueError("not an image")
+                data = b""
+                for chunk in resp.iter_content(65536):
+                    data += chunk
+                    if len(data) > 5_000_000:
+                        raise ValueError("image too large")
+                with Image.open(io.BytesIO(data)) as img:
+                    img.verify()
+                results.append(publish(render_news(title, summary, data), "news"))
+                continue
+            except Exception:
+                logging.exception("Could not load image for %s", title)
+        results.append(publish(render(title, summary[:300] + " | Quelle: " + CFG.get("news_source_label", "RSS"), "NEWS"), "news"))
+    return results
+
+
+def render_news(title, summary, image_bytes):
+    w, h = int(CFG.get("slide_width", 1920)), int(CFG.get("slide_height", 1080))
+    canvas = Image.new("RGB", (w, h), "#122036")
+    with Image.open(io.BytesIO(image_bytes)) as source:
+        picture = source.convert("RGB")
+        picture.thumbnail((int(w * .45), int(h * .7)))
+        canvas.paste(picture, (w - picture.width - 65, (h - picture.height) // 2))
+    draw = ImageDraw.Draw(canvas)
+    draw.text((65, 65), "NEWS · " + CFG.get("news_source_label", "RSS"), font=font(36, True), fill="#80b9ff")
+    y = 220
+    for line in wrap(draw, title, font(58, True), int(w * .52))[:6]:
+        draw.text((65, y), line, font=font(58, True), fill="white")
+        y += 78
+    y += 30
+    for line in wrap(draw, summary, font(29), int(w * .52))[:5]:
+        if y > h - 90:
+            break
+        draw.text((65, y), line, font=font(29), fill="#d1dae8")
+        y += 44
+    buffer = io.BytesIO()
+    canvas.save(buffer, "JPEG", quality=88)
+    return buffer.getvalue()
 
 
 def weather():
@@ -111,8 +176,13 @@ def weather():
 def local_images():
     output = []
     w, h = int(CFG.get("slide_width", 1920)), int(CFG.get("slide_height", 1080))
-    for folder in ("company", "photos"):
-        for path in sorted((ROOT / "content" / folder).iterdir()):
+    folders = [ROOT / "content" / "company", ROOT / "content" / "photos"]
+    folders += [Path("/app/mounts") / name for name in CFG.get("media_mounts", []) if re.fullmatch(r"[a-zA-Z0-9_-]+", str(name))]
+    for directory in folders:
+        if not directory.is_dir():
+            continue
+        folder = directory.name
+        for path in sorted(directory.iterdir()):
             if not path.is_file() or path.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp"):
                 continue
             try:
@@ -171,6 +241,20 @@ def image(name):
     if not name.endswith(".jpg"):
         abort(404)
     return send_from_directory(SLIDES, name, mimetype="image/jpeg")
+
+
+@app.get("/")
+@app.get("/player")
+def player():
+    return send_from_directory(Path(__file__).parent, "player.html", mimetype="text/html")
+
+
+@app.get("/api/playlist")
+def playlist():
+    path = OUT / "inventory.txt"
+    if not path.exists():
+        return jsonify({"items": []})
+    return jsonify({"items": ["/slides/" + line.strip().rsplit("/", 1)[-1] for line in path.read_text().splitlines() if line.strip()]})
 
 
 @app.get("/healthz")
