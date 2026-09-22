@@ -106,6 +106,8 @@ def parse_articles(feed, label, feed_url):
 
 def refresh():
     requested = get_feeds(FEED_FILE)
+    if not requested:
+        LOG.warning("no RSS feeds configured: add URLs to content/feeds.txt")
     groups = []
     updated_sources = {}
     for label, url in requested:
