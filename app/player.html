@@ -1,39 +1,127 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>rss2slideshow player</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>rss2slideshow</title>
 <style>
-html,body{margin:0;width:100%;height:100%;background:#101827;color:white;font-family:system-ui,sans-serif;overflow:hidden}
-#slide{width:100vw;height:100vh;object-fit:contain;display:none}
-#empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:2rem}
-#status{position:absolute;right:1rem;bottom:1rem;background:#0008;padding:.3rem .6rem;border-radius:.3rem;font-size:.8rem}
-</style></head><body><div id="empty">waiting for slides...<br>check the server logs if this stays here</div>
-<img id="slide" alt="slideshow image"><div id="status">starting</div>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { background: #f8f7f3; color: #252525; font-family: Arial, Helvetica, sans-serif; }
+#slide { width: 100vw; height: 100vh; display: none; object-fit: contain; }
+#empty { position: absolute; inset: 0; display: grid; place-items: center; color: #65635e; font-size: 1.3rem; }
+#clock {
+  position: fixed; z-index: 2; right: 4.5vw; top: 4.8vh;
+  min-width: 175px; padding: .25rem .55rem .35rem; text-align: right;
+  background: rgba(248,247,243,.97); border-bottom: 2px solid #8b3932;
+  font-variant-numeric: tabular-nums; line-height: 1.3;
+}
+#today { display: block; font-size: clamp(.7rem, 1vw, 1rem); color: #65635e; }
+#time { display: block; font-size: clamp(1.05rem, 1.6vw, 1.75rem); font-weight: 600; letter-spacing: .02em; }
+#status { display: none; position: fixed; bottom: 2vh; left: 3vw; background: #f8f7f3; padding: .5rem; color: #8b3932; }
+@media (max-width: 650px) { #clock { top: 2vh; right: 2vw; min-width: 0; } }
+</style>
+</head>
+<body>
+<img id="slide" alt="Current slideshow image">
+<div id="empty">waiting for the first slide ...</div>
+<div id="clock"><span id="today"></span><span id="time">--:--:--</span></div>
+<div id="status" role="status"></div>
 <script>
-let items=[],index=0,last="";
-const image=document.getElementById("slide"),empty=document.getElementById("empty"),status=document.getElementById("status");
-async function update(){
- try{
-  const r=await fetch("/api/playlist",{cache:"no-store"});
-  if(!r.ok)throw Error("playlist: "+r.status);
-  const data=await r.json();
-  if(data.items.length){
-    const current=items[index]||"";
-    items=data.items;
-    const n=items.indexOf(current);
-    if(n>=0)index=n; else index=index%items.length;
-    empty.style.display="none";
-    status.textContent=items.length+" slides";
-    if(!last)show();
-  } else status.textContent="no slides yet";
- }catch(e){status.textContent=e.message}
+let items = [], index = 0, last = "";
+let timezone = "Europe/Berlin", serverMs = null, syncAt = null;
+let slideMs = 15000, slideTimer = null;
+const image = document.getElementById("slide");
+const empty = document.getElementById("empty");
+const status = document.getElementById("status");
+
+function error(message) {
+  status.textContent = message;
+  status.style.display = message ? "block" : "none";
 }
-function show(){
- if(!items.length)return;
- const next=items[index%items.length];
- if(next!==last){image.src=next;last=next}
- image.style.display="block";
- index=(index+1)%items.length;
+
+function clockNow() {
+  if (serverMs === null) return new Date(); // fallback while the server is loading
+  return new Date(serverMs + performance.now() - syncAt);
 }
-image.onerror=()=>{status.textContent="could not load slide";last="";setTimeout(show,1000)};
-update();setInterval(show,Number(document.documentElement.dataset.duration||15000));setInterval(update,60000);
-</script></body></html>
+
+function updateClock() {
+  const now = clockNow();
+  try {
+    document.getElementById("today").textContent =
+      new Intl.DateTimeFormat("de-DE", { timeZone: timezone, weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }).format(now);
+    document.getElementById("time").textContent =
+      new Intl.DateTimeFormat("de-DE", { timeZone: timezone, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(now);
+  } catch (_) {
+    document.getElementById("today").textContent = now.toLocaleDateString();
+    document.getElementById("time").textContent = now.toLocaleTimeString();
+  }
+}
+
+async function loadDisplaySettings() {
+  try {
+    const r = await fetch("/api/display-config", { cache: "no-store" });
+    if (!r.ok) throw Error("display settings: " + r.status);
+    const settings = await r.json();
+    timezone = settings.timezone || timezone;
+    serverMs = Number(settings.server_time_ms);
+    syncAt = performance.now();
+    const name = String(settings.brand_name || "").trim();
+    if (name) document.title = name;
+    const seconds = Number(settings.slide_seconds);
+    const newDuration = Number.isFinite(seconds) && seconds >= 3 ? seconds * 1000 : 15000;
+    if (!slideTimer || slideMs !== newDuration) {
+      slideMs = newDuration;
+      if (slideTimer) clearInterval(slideTimer);
+      slideTimer = setInterval(show, slideMs);
+    }
+    updateClock();
+  } catch (e) {
+    if (!slideTimer) slideTimer = setInterval(show, slideMs);
+    // display still works if an older backend doesn't have this endpoint
+  }
+}
+
+async function updatePlaylist() {
+  try {
+    const r = await fetch("/api/playlist", { cache: "no-store" });
+    if (!r.ok) throw Error("playlist: " + r.status);
+    const data = await r.json();
+    if (!Array.isArray(data.items) || !data.items.length) {
+      if (!items.length) error("no slides available yet");
+      return;
+    }
+    items = data.items;
+    if (!items.includes(last)) {
+      index = 0;
+      show();
+    } else {
+      index = (items.indexOf(last) + 1) % items.length;
+    }
+    empty.style.display = "none";
+    error("");
+  } catch (e) { error(e.message); }
+}
+
+function show() {
+  if (!items.length) return;
+  const next = items[index % items.length];
+  index = (index + 1) % items.length;
+  if (next !== last) {
+    last = next;
+    image.src = next;
+  }
+  image.style.display = "block";
+}
+
+image.onerror = () => { error("could not load this slide"); last = ""; show(); };
+loadDisplaySettings();
+updatePlaylist();
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(loadDisplaySettings, 300000);
+setInterval(updatePlaylist, 60000);
+</script>
+</body>
+</html>
