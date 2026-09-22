@@ -46,6 +46,21 @@ class ReaderTests(unittest.TestCase):
             self.assertEqual(client.get("/kiosk").status_code, 200)
             self.assertEqual(client.get("/inventory.txt").status_code, 404)
 
+    def test_legacy_config_feed_is_not_loaded(self):
+        sources = [("File feed", "https://example.org/one")]
+        response = Mock()
+        response.content = xml("From file", "File feed")
+        response.raise_for_status.return_value = None
+        with patch.dict(main.CFG, {
+            "rss_url": "https://example.org/OLD",
+            "news_source_label": "OLD source"
+        }), patch.object(main, "get_feeds", return_value=sources) as reader, \
+             patch.object(main.requests, "get", return_value=response) as fetch:
+            main.refresh()
+        reader.assert_called_once_with(main.FEED_FILE)
+        fetch.assert_called_once()
+        self.assertEqual(fetch.call_args.args[0], "https://example.org/one")
+
     def test_only_safe_article_links(self):
         self.assertEqual(main.http_url("javascript:alert(1)"), "")
         self.assertEqual(main.http_url("https://example.org/news"), "https://example.org/news")
