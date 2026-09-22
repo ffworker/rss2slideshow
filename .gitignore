@@ -10,3 +10,6 @@ content/photos/*
 !content/photos/.gitkeep
 assets/*
 !assets/.gitkeep
+
+# personal/company feed choices stay on the docker host
+content/feeds.txt
