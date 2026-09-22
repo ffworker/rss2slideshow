@@ -275,12 +275,12 @@ def weather():
         return []
     response = requests.get("https://api.open-meteo.com/v1/forecast", params={
         "latitude": config["latitude"], "longitude": config["longitude"],
-        "current": "temperature_2m,weather_code", "timezone": "Europe/Berlin"
+        "current": "temperature_2m,weather_code", "timezone": DISPLAY_TZ
     }, timeout=20)
     response.raise_for_status()
     current = response.json()["current"]
     description = f"{config.get('label', 'Wetter')} · Wettercode {current['weather_code']} · Quelle: Open-Meteo"
-    return [publish(render(f"{current['temperature_2m']} °C", description, "WETTER"), "weather")]
+    return [publish(render(f"{current['temperature_2m']} °C", description, "WETTER", "Open-Meteo"), "weather")]
 
 
 def local_images():
@@ -370,6 +370,7 @@ def display_config():
     return jsonify({
         "timezone": DISPLAY_TZ,
         "brand_name": BRAND,
+        "accent_color": ACCENT,
         "server_time_ms": int(time.time() * 1000),
         "slide_seconds": max(3, min(300, int(os.environ.get("SLIDE_SECONDS", "15"))))
     })
