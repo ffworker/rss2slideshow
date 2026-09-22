@@ -103,7 +103,7 @@ def parse_articles(feed, label, feed_url):
 
 
 def refresh():
-    requested = get_feeds(CFG.get("rss_url"), CFG.get("news_source_label", ""), FEED_FILE)
+    requested = get_feeds(FEED_FILE)
     groups = []
     updated_sources = {}
     for label, url in requested:
@@ -137,7 +137,7 @@ def worker():
     last_refresh = 0
     while True:
         try:
-            sources = get_feeds(CFG.get("rss_url"), CFG.get("news_source_label", ""), FEED_FILE)
+            sources = get_feeds(FEED_FILE)
             if sources != last_sources or time.monotonic() - last_refresh >= REFRESH_SECONDS:
                 last_sources = refresh()
                 last_refresh = time.monotonic()
