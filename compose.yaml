@@ -10,3 +10,5 @@ services:
       - ./config.yaml:/app/config.yaml:ro
       - ./content:/app/content:ro
       - ./output:/app/output
+      # mount an already-mounted SMB/NFS share here if wanted. see config media_mounts.
+      - ${MEDIA_DIR:-./content/photos}:/app/mounts/external:ro
