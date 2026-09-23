@@ -1,7 +1,5 @@
-# stuff about the kiosk itself, NOT its feed list.
-# all rss sources go into content/feeds.txt (copy the example first)
-brand_name: rss2slideshow
-accent_color: "#8b3932"
+# settings for the kiosk itself. feeds are in content/feeds.txt,
+# customer's colors/name/font are in branding/brand.yaml.
 
 max_articles: 5     # per feed
 refresh_minutes: 10
