@@ -132,6 +132,10 @@ class CustomerBrandTests(unittest.TestCase):
             self.assertIn('span.textContent = name', player)
             self.assertIn('min-width:1600px', player)
             self.assertIn('clamp(84px,12vh,130px)', player)
+            self.assertIn('grid-template-columns:minmax(0,56%) minmax(0,1fr)', player)
+            self.assertIn('object-fit:contain', player)
+            self.assertIn('min-width:901px', player)
+            self.assertIn('h1.long-title', player)
 
     def test_invalid_brand_values_use_safe_defaults(self):
         with tempfile.TemporaryDirectory() as tmp:
