@@ -23,11 +23,12 @@ cd rss2slideshow
 cp .env.example .env
 cp config.example.yaml config.yaml
 cp content/feeds.example.txt content/feeds.txt
+cp branding/brand.example.yaml branding/brand.yaml
 ```
 
 edit `.env` first: `BIND_IP` must be an address the display can actually reach. the example uses `127.0.0.1` on purpose, so it'll only work on the docker host until you change it. don't expose your internal display stuff to the whole internet just because it runs in a browser.
 
-then add your RSS URLs in `content/feeds.txt` (see below), change brand/colors in `config.yaml` if you want, and start it:
+then add your RSS URLs in `content/feeds.txt` (see below), change the customer look in `branding/brand.yaml` if you want, and start it:
 
 ```bash
 docker compose up -d --build
@@ -56,13 +57,37 @@ https://example.org/some-other-feed.xml
 
 after that: edit `content/feeds.txt` whenever you like. no docker restart/build needed just to add, remove or rename feeds. the server checks for a changed list about every 30 sec, fetches it and the browser checks for updates about every 30 sec. normal news refresh uses `refresh_minutes` (default 10). slow/broken feeds can delay that a little.
 
+## first customer test / branding
+
+ok this is the bit i actually want to try with a real customer now. **one installation = one customer look** for now. their colors/font/logo should NOT need me editing python/html or copying a whole new repo.
+
+`branding/brand.yaml` is the customer file (copy the example if you don't have it yet). `content/feeds.txt` is still the ONLY list for RSS URLs + their source labels, totally separate from customer branding.
+
+```yaml
+brand_name: "Kundenname"
+accent_color: "#8b3932"
+background_color: "#f8f7f3"
+text_color: "#242424"
+font_family: news
+```
+
+`brand_name` is the name in the kiosk header, NOT the RSS source name. `accent_color` is for small UI details (source label/line), not a giant colored background. background/text colors are optional; check contrast/readability on the actual screen if you change those. hex colors like `#123456` or `#abc` work.
+
+**logo:** put a PNG at `branding/logo.png`. **customer font:** if they have a webfont file that we're actually licensed to serve, put it at `branding/font.woff2`. the kiosk uses it for headlines and body. do not commit customer logos, client details or licensed font files in this public repo. the local branding folder is mounted into the container read-only, but the browser WILL download that font when it opens the kiosk, so the webfont license needs to allow this usage.
+
+if i only get a font *name*, put it under `font_family` for now, e.g. `font_family: Verdana`. it will only look right if that font is installed on the kiosk device. `news` gives the old Arial/Georgia mix; `sans`, `serif`, `mono` are the other easy presets. a supplied `font.woff2` takes priority so different kiosk devices will look the same.
+
+**quick customer rehearsal:** copy the brand example, put their color/name/font in there and look at `http://YOUR_DOCKER_HOST:8085/`. edit `branding/brand.yaml` while it's running, or replace the logo/font file. the kiosk picks up the new look on its next ~30s browser poll, without changing the RSS feeds or rebuilding Docker. first time after this feature lands you still need `docker compose up -d --build` to get the new code and branding mount. older installations can keep using their existing `brand_name`/`accent_color` in `config.yaml` until they create `branding/brand.yaml` (then that new file takes over).
+
+if a customer needs a totally separate set of feeds **and** different branding at the same time, that's another installation/container configuration for now. this is not a multi-customer login system or an on-screen settings menu.
+
 ## few questions i already had
 
-**why two files, .env and config.yaml?** neither contains any feed URLs. `.env` is for the docker port binding + clock timezone + article timing; `config.yaml` is the app look and refresh/article limits. the actual sources are ONLY `content/feeds.txt`.
+**why different files?** `.env` is for docker/network + clock timezone + article timing. `config.yaml` is for article limits, refresh interval and turning feed pictures on/off. `branding/brand.yaml` is the customer look. `content/feeds.txt` is the ONLY list for actual RSS URLs. keeping those apart means i can swap a customer look without touching their feeds.
 
 **can i change the display time / timezone?** yup, `SLIDE_SECONDS=20` and `DISPLAY_TZ=Europe/Berlin` in `.env` (use an IANA timezone, e.g. `UTC`). since those settings are passed to the container when it starts, run `docker compose up -d` after editing them. feed list edits don't need this. timezone affects the clock / published times.
 
-**can i brand it?** `brand_name` and `accent_color` in `config.yaml`, optional `assets/logo.png` for the little logo. no html/python changes needed. the logo file and actual configs stay local / untracked. restart/recreate the service after config changes. the repo has a default news-ish look on purpose, not trying to invent a giant UI here.
+**can i brand it?** yep, see the customer test above. name, colors and font in `branding/brand.yaml`; optional local `branding/logo.png` and `branding/font.woff2`. no code changes or restart for those after the upgraded container is running. the existing `assets/logo.png` still works as a fallback for my older setup.
 
 **where are the pictures?** set `news_images: true` in `config.yaml` *after* checking you're allowed to show those feeds' pictures on your display. the image has to exist in the RSS content and the image host has to allow the browser to load it; some feeds have no image or block hotlinking, so text-only articles are normal. this is not a full-article scraper.
 
