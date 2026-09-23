@@ -19,15 +19,15 @@ def _color(value, fallback):
     return value.lower()
 
 
-def _file_url(folder, filename):
+def _file_url(folder, filename, prefix="/branding"):
     path = Path(folder) / filename
     if path.is_file():
         # browser will fetch a replacement asset even if the filename stays the same
-        return "/branding/" + filename + "?v=" + str(path.stat().st_mtime_ns)
+        return prefix + "/" + filename + "?v=" + str(path.stat().st_mtime_ns)
     return ""
 
 
-def read_brand(root, fallback=None):
+def read_brand(root, fallback=None, profile=None):
     """Reload branding/brand.yaml at request time; fall back to old config during upgrades."""
     root = Path(root)
     legacy = fallback or {}
@@ -36,11 +36,17 @@ def read_brand(root, fallback=None):
         "accent_color": _color(legacy.get("accent_color", "#8b3932"), "#8b3932"),
         "background_color": "#f8f7f3",
         "text_color": "#242424",
+        "header_color": "",
+        "footer_color": "",
+        "logo_mode": "normal",
         "font_family": "news",
         "logo_url": "",
         "font_url": "",
     }
-    folder = root / "branding"
+    if profile is not None and not re.fullmatch(r"[a-z0-9-]{1,40}", profile):
+        raise ValueError("invalid demo profile")
+    folder = root / "branding" / "examples" / profile if profile else root / "branding"
+    prefix = "/branding/examples/" + profile if profile else "/branding"
     path = folder / "brand.yaml"
     if path.is_file():
         try:
@@ -49,12 +55,13 @@ def read_brand(root, fallback=None):
                 raise ValueError("brand.yaml needs key: value pairs")
             if custom.get("brand_name"):
                 settings["brand_name"] = str(custom["brand_name"]).strip()[:60]
-            for field in ("accent_color", "background_color", "text_color"):
+            for field in ("accent_color", "background_color", "text_color", "header_color", "footer_color"):
                 if field in custom:
                     chosen = _color(custom[field], settings[field])
                     if chosen == settings[field] and str(custom[field]).strip().lower() != chosen:
                         LOG.warning("invalid %s in branding/brand.yaml", field)
                     settings[field] = chosen
+            settings["logo_mode"] = "wide" if custom.get("logo_mode") == "wide" else "normal"
             chosen_font = str(custom.get("font_family", "news")).strip()
             if FONT_NAME.fullmatch(chosen_font):
                 settings["font_family"] = chosen_font
@@ -63,9 +70,9 @@ def read_brand(root, fallback=None):
         except (OSError, ValueError, yaml.YAMLError):
             LOG.exception("could not read branding/brand.yaml, keeping default look")
 
-    settings["logo_url"] = _file_url(folder, "logo.png")
-    settings["font_url"] = _file_url(folder, "font.woff2")
-    if not settings["logo_url"]:
+    settings["logo_url"] = _file_url(folder, "logo.png", prefix)
+    settings["font_url"] = _file_url(folder, "font.woff2", prefix)
+    if not settings["logo_url"] and not profile:
         # old installations may still have their logo in assets/logo.png
         old_logo = root / "assets" / "logo.png"
         if old_logo.is_file():
