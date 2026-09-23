@@ -11,5 +11,12 @@ background_color: "#fff8cf" # warmer yellow, not full saturated everywhere
 text_color: "#202020"
 logo_mode: normal
 # logo.png = Bistro Connect icon (primary)
-# group-logo.png = the group mark; optional/small and hidden if the TV is too small
+# claim-logo.png = Friedrich Friedrich with claim, in the header if it fits
+# company names are real text instead of the tiny almost-invisible PNG
+footer_names:
+  - "Logserv"
+  - "Friedrich Friedrich"
+  - "Höhne-Grass"
+  - "J. & G. Adrian"
+  - "KS Büromöbel"
 # no "guten Appetit" overlay in the first branding round
