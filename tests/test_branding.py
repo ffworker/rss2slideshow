@@ -97,8 +97,8 @@ class CustomerBrandTests(unittest.TestCase):
         self.assertTrue((demo / "brand.yaml").is_file())
         logo = demo / "logo.png"
         group = demo / "group-logo.png"
-        self.assertEqual(logo.read_bytes()[:8], b"\\x89PNG\\r\\n\\x1a\\n")
-        self.assertEqual(group.read_bytes()[:8], b"\\x89PNG\\r\\n\\x1a\\n")
+        self.assertEqual(logo.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
+        self.assertEqual(group.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
         brand = read_brand(root, profile="logserv")
         self.assertEqual(brand["brand_name"], "Bistro Connect")
         self.assertEqual(brand["layout"], "bistro")
