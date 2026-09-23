@@ -1,0 +1,12 @@
+# copy to branding/brand.yaml and change only what the customer wants.
+# real customer values and their logo/font stay on YOUR docker host, not in github.
+brand_name: "Demo News"
+accent_color: "#8b3932"
+background_color: "#f8f7f3"
+text_color: "#242424"
+# news = Arial body + Georgia headlines. also: sans / serif / mono
+# or a font name installed on the kiosk device. for a real customer font,
+# place its properly licensed webfont in branding/font.woff2 instead.
+font_family: news
+# optional: branding/logo.png
+# optional: branding/font.woff2 (if present it is used across the kiosk)
