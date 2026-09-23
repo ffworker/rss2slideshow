@@ -81,6 +81,20 @@ if i only get a font *name*, put it under `font_family` for now, e.g. `font_fami
 
 if a customer needs a totally separate set of feeds **and** different branding at the same time, that's another installation/container configuration for now. this is not a multi-customer login system or an on-screen settings menu.
 
+## actual first customer demo (bistro / unternehmensgruppe)
+
+got real branding material now and permission to put this demo in the public repo. wanted to check how painless this would actually be for a new customer without messing up the existing live kiosk.
+
+try `http://YOUR_DOCKER_HOST:8085/demo/logserv`. that URL uses `branding/examples/logserv/brand.yaml` + its own `logo.png`. **the normal `/` keeps using my own local `branding/brand.yaml`**, so i can compare the two looks on the same server. both use the SAME feeds from `content/feeds.txt` for the demo; it isn't a second customer deployment or a separate feed list.
+
+for this demo i used the **Unternehmensgruppe** logo (not the separate Bistro Connect logo, since it's meant for everybody), their provided Reinorange `#ec6608` on header/footer and Verkehrsgelb `#ffdd00` for the news background. headline/body requested: Calibri. **Calibri is NOT included in this repo.** The browser will use Calibri if installed, otherwise Carlito/Arial, so it won't be pixel-perfect everywhere without an appropriately licensed webfont. a readable black text/accent against that bright yellow; we'll check how this actually looks on a TV before calling it finished. the suggested 'guten Appetit' overlay is for later, not in this first colors/font/logo round.
+
+the public demo files (company gave permission) are `branding/examples/logserv/brand.yaml` and `branding/examples/logserv/logo.png`. that's the example i can show someone else. their actual logos/fonts don't get added to git by default.
+
+**how i'd do a different customer:** copy `branding/brand.example.yaml` to the *local* `branding/brand.yaml`, put their name/colors/font in there, add their allowed PNG logo as `branding/logo.png` and if needed a properly licensed `branding/font.woff2`. for a wide group logo set `logo_mode: wide`, otherwise normal. `header_color` and `footer_color` are optional hex colors. don't touch Python/HTML or the feed list for just the look. brand.yaml / local logo / font are gitignored. if i want a *separate public sample* like this one, it goes in a new `branding/examples/<slug>/` **only with permission to publish those specific files**, and i'd explicitly allow that example in .gitignore. `/demo/<slug>` is the preview URL, not a multi-tenant customer system.
+
+first update needs `git pull --ff-only && docker compose up -d --build` because of the new route and mounted example files. afterwards edit the local branding settings and the open kiosk should pick the new look up within about 30 sec. don't upload your customer's private stuff to the public repo, especially font files. also don't mistake customer-logo permission for permission to reuse images from RSS providers.
+
 ## few questions i already had
 
 **why different files?** `.env` is for docker/network + clock timezone + article timing. `config.yaml` is for article limits, refresh interval and turning feed pictures on/off. `branding/brand.yaml` is the customer look. `content/feeds.txt` is the ONLY list for actual RSS URLs. keeping those apart means i can swap a customer look without touching their feeds.
