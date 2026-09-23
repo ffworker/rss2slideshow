@@ -230,6 +230,90 @@ body.bistro-layout #counter { font-size:clamp(16px,1.1vw,24px); }
   #summary { font-size:clamp(14px,3vw,19px); -webkit-line-clamp:4; }
   .story.no-picture { grid-template-rows:1fr; }
 }
+
+/* Big TV pass for Bistro: legible masthead + group names spanning the whole footer.
+   The five company names are real text, never a tiny scaled logo. */
+@media (min-width:901px) and (orientation:landscape) {
+  body.bistro-layout #page {
+    grid-template-rows:clamp(112px,16vh,178px) minmax(0,1fr) clamp(67px,9vh,98px);
+  }
+  body.bistro-layout header {
+    padding:8px clamp(22px,3.1vw,60px);
+  }
+  body.bistro-layout .identity {
+    flex:1 1 auto;
+    min-width:0;
+    gap:clamp(12px,1.4vw,27px);
+  }
+  body.bistro-layout #logo {
+    width:clamp(82px,11vh,122px);
+    height:clamp(82px,11vh,122px);
+  }
+  body.bistro-layout .brand-copy,
+  body.bistro-layout .brand-line { min-width:0; flex:1 1 auto; }
+  body.bistro-layout .brand-line {
+    align-items:center;
+    flex-wrap:wrap;
+    column-gap:clamp(13px,1.2vw,24px);
+    row-gap:3px;
+  }
+  body.bistro-layout #brand {
+    font-size:clamp(33px,2.55vw,51px);
+    line-height:1.08;
+  }
+  body.bistro-layout #header-source {
+    font-size:clamp(27px,2.35vw,47px);
+    line-height:1.09;
+    white-space:normal;
+    text-overflow:clip;
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    overflow:hidden;
+    flex:1 1 48%;
+  }
+  body.bistro-layout:not(.source-in-header) #header-source { display:none; }
+  body.bistro-layout .header-right { margin-left:auto; }
+  body.bistro-layout #time { font-size:clamp(25px,1.8vw,36px); }
+  body.bistro-layout footer.has-names {
+    grid-template-columns:minmax(0,1fr) auto;
+    column-gap:clamp(18px,2vw,42px);
+    padding:0 clamp(20px,2.75vw,52px);
+  }
+  body.bistro-layout #footer-names {
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    column-gap:0;
+    row-gap:0;
+    justify-items:stretch;
+    align-items:center;
+    font-size:clamp(18px,1.5vw,30px);
+    line-height:1.12;
+    letter-spacing:-.02em;
+  }
+  body.bistro-layout #footer-names .company {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    white-space:normal;
+    text-align:center;
+    min-width:0;
+    padding:0 clamp(3px,.45vw,10px);
+    overflow-wrap:normal;
+  }
+  body.bistro-layout #footer-names .company + .company {
+    border-left:2px solid var(--accent);
+  }
+  body.bistro-layout #footer-names .company + .company::before { content:none; }
+  body.bistro-layout #counter { font-size:clamp(19px,1.35vw,28px); }
+}
+@media (min-width:901px) and (max-width:1400px) and (orientation:landscape) {
+  body.bistro-layout #header-source { font-size:clamp(26px,2.2vw,32px); }
+  body.bistro-layout #brand { font-size:clamp(30px,2.5vw,36px); }
+  body.bistro-layout #footer-names { font-size:clamp(17px,1.4vw,21px); }
+}
+
 </style>
 </head>
 <body>
