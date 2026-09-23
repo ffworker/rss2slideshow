@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 import feedparser
 import requests
 import yaml
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request, abort
 from zoneinfo import ZoneInfo
 
 from app.branding import read_brand
@@ -157,6 +157,26 @@ def kiosk():
     return send_from_directory(Path(__file__).parent, "player.html", mimetype="text/html")
 
 
+@app.get("/demo/<profile>")
+def demo(profile):
+    # only sample profiles committed in branding/examples, never private customer config
+    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile):
+        abort(404)
+    if not (ROOT / "branding" / "examples" / profile / "brand.yaml").is_file():
+        abort(404)
+    return send_from_directory(Path(__file__).parent, "player.html", mimetype="text/html")
+
+
+@app.get("/branding/examples/<profile>/<filename>")
+def demo_asset(profile, filename):
+    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile) or filename not in ("logo.png", "font.woff2"):
+        abort(404)
+    folder = ROOT / "branding" / "examples" / profile
+    if not (folder / "brand.yaml").is_file() or not (folder / filename).is_file():
+        abort(404)
+    return send_from_directory(folder, filename, mimetype="image/png" if filename == "logo.png" else "font/woff2", conditional=True)
+
+
 @app.get("/branding/<filename>")
 def brand_asset(filename):
     if filename not in ("logo.png", "font.woff2"):
@@ -178,6 +198,9 @@ def logo():
 
 @app.get("/api/articles")
 def articles():
+    demo_name = request.args.get("demo")
+    if demo_name and (not re.fullmatch(r"[a-z0-9-]{1,40}", demo_name) or not (ROOT / "branding" / "examples" / demo_name / "brand.yaml").is_file()):
+        abort(404)
     with lock:
         current = {
             "articles": list(snapshot["articles"]),
@@ -187,7 +210,7 @@ def articles():
     current.update({
         "timezone": DISPLAY_TZ,
         "server_time_ms": int(time.time() * 1000),
-        **read_brand(ROOT, CFG),
+        **read_brand(ROOT, CFG, profile=demo_name),
         "slide_seconds": SLIDE_SECONDS,
     })
     return jsonify(current)
