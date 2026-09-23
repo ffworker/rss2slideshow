@@ -17,3 +17,8 @@ content/feeds.txt
 # local customer files: don't commit names, logos or licensed fonts
 branding/*
 !branding/brand.example.yaml
+# only this customer has approved publishing their demo material
+!branding/examples/
+branding/examples/*
+!branding/examples/logserv/
+!branding/examples/logserv/**
