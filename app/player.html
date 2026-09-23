@@ -32,9 +32,9 @@ body.wide-logo #brand, body.wide-logo #tagline { display:none !important; }
 .header-right { display:flex; align-items:center; gap:clamp(18px,2.2vw,40px); flex:none; min-width:0; }
 #logo.ready { display:block; }
 /* the group wordmark has lots of horizontal detail: give it real width, preserve proportions */
-#group-logo { display:none; width:min(27vw,520px); max-width:520px; max-height:64px;
-  height:auto; object-fit:contain; object-position:right center; flex:none;
-  background:#fff; padding:5px 8px; border-radius:2px; }
+#group-logo { display:none; width:clamp(250px,22vw,410px); height:clamp(50px,7.5vh,75px);
+  object-fit:contain; object-position:center; flex:none; }
+/* this is the logo WITH claim, not the many-company text banner */
 .clock { text-align:right; font-variant-numeric:tabular-nums; flex:none; }
 #time { display:block; font-weight:700; font-size:clamp(20px,1.7vw,33px); line-height:1.1; }
 #date { display:block; font-size:clamp(11px,.8vw,15px); margin-top:5px; }
@@ -67,6 +67,16 @@ footer { display:flex; align-items:center; justify-content:space-between; gap:2v
   border-top:2px solid var(--accent); font-size:clamp(12px,.95vw,18px); min-width:0; }
 #footer { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #counter { white-space:nowrap; flex:none; font-variant-numeric:tabular-nums; font-weight:700; }
+#footer-banner { display:none; width:min(61vw,970px); height:clamp(30px,4.4vh,46px);
+  object-fit:contain; min-width:0; margin:0 auto; }
+#footer-banner.ready { display:block; }
+footer.has-banner { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2.5fr) auto;
+  align-items:center; column-gap:clamp(12px,1.5vw,28px); }
+footer.has-banner #footer { font-size:clamp(11px,.8vw,15px); }
+@media (max-width:1180px) {
+  #footer-banner.ready { display:none; }
+  footer.has-banner { display:flex; }
+}
 
 /* the optional group logo stays secondary and is only shown when it actually fits */
 @media (min-width:1600px) and (min-height:800px) {
@@ -100,7 +110,7 @@ footer { display:flex; align-items:center; justify-content:space-between; gap:2v
     <div class="brand-copy"><div id="brand">RSS kiosk</div><div id="tagline"></div></div>
   </div>
   <div class="header-right">
-    <img id="group-logo" alt="Unternehmensgruppe">
+    <img id="group-logo" alt="Friedrich Friedrich – Gruppenlogo mit Claim">
     <div class="clock"><span id="time">--:--</span><span id="date"></span></div>
   </div>
 </header>
@@ -111,7 +121,7 @@ footer { display:flex; align-items:center; justify-content:space-between; gap:2v
     <div class="copy"><h1 id="headline">Nachrichten werden geladen …</h1><p id="summary"></p></div>
   </article>
 </main>
-<footer><span id="footer">RSS reader</span><span id="counter"></span></footer>
+<footer id="page-footer"><span id="footer">RSS reader</span><img id="footer-banner" alt="Logserv · Friedrich Friedrich · Höhne-Grass · J. & G. Adrian · KS Büromöbel"><span id="counter"></span></footer>
 </div>
 <script>
 "use strict";
@@ -213,6 +223,9 @@ function applySettings(data) {
   const groupUrl = data.group_logo_url || "";
   document.body.classList.toggle("has-group", !!groupUrl);
   setImage("group-logo", groupUrl);
+  const bannerUrl = data.footer_banner_url || "";
+  el("page-footer").classList.toggle("has-banner", !!bannerUrl);
+  setImage("footer-banner", bannerUrl);
 
   const name = String(data.font_family || "news");
   const presets = {
