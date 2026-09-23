@@ -29,10 +29,12 @@ body.wide-logo #brand, body.wide-logo #tagline { display:none !important; }
 #brand { font-size:clamp(23px,2.35vw,43px); line-height:1.1; font-weight:700;
   letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #tagline { display:none; font-size:clamp(12px,.98vw,18px); letter-spacing:.06em; }
-.header-right { display:flex; align-items:center; gap:clamp(14px,2vw,38px); flex:none; }
+.header-right { display:flex; align-items:center; gap:clamp(18px,2.2vw,40px); flex:none; min-width:0; }
 #logo.ready { display:block; }
-#group-logo { display:none; max-width:clamp(180px,18vw,330px); max-height:33px; width:auto;
-  height:auto; object-fit:contain; }
+/* the group wordmark has lots of horizontal detail: give it real width, preserve proportions */
+#group-logo { display:none; width:min(27vw,520px); max-width:520px; max-height:64px;
+  height:auto; object-fit:contain; object-position:right center; flex:none;
+  background:#fff; padding:5px 8px; border-radius:2px; }
 .clock { text-align:right; font-variant-numeric:tabular-nums; flex:none; }
 #time { display:block; font-weight:700; font-size:clamp(20px,1.7vw,33px); line-height:1.1; }
 #date { display:block; font-size:clamp(11px,.8vw,15px); margin-top:5px; }
