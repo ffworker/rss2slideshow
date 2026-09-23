@@ -179,12 +179,12 @@ def demo_asset(profile, filename):
 
 @app.get("/branding/<filename>")
 def brand_asset(filename):
-    if filename not in ("logo.png", "font.woff2"):
+    if filename not in ("logo.png", "group-logo.png", "font.woff2"):
         return "", 404
     folder = ROOT / "branding"
     if not (folder / filename).is_file():
         return "", 404
-    media_type = "image/png" if filename == "logo.png" else "font/woff2"
+    media_type = "image/png" if filename.endswith(".png") else "font/woff2"
     return send_from_directory(folder, filename, mimetype=media_type, conditional=True)
 
 
