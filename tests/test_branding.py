@@ -82,6 +82,7 @@ class CustomerBrandTests(unittest.TestCase):
                     self.assertEqual(client.get("/api/articles?demo=unknown").status_code, 404)
                     self.assertEqual(client.get("/branding/examples/logserv/brand.yaml").status_code, 404)
                     self.assertEqual(client.get("/branding/examples/logserv/logo.png").status_code, 200)
+                    self.assertEqual(client.get("/branding/examples/logserv/group-logo.png").status_code, 404)
             self.assertEqual(live["brand_name"], "Live client")
             self.assertEqual(preview["brand_name"], "Bistro Connect")
             self.assertEqual(preview["background_color"], "#ffdd00")
@@ -89,6 +90,29 @@ class CustomerBrandTests(unittest.TestCase):
             self.assertEqual(preview["font_family"], "Calibri")
             self.assertEqual(preview["logo_mode"], "wide")
             self.assertTrue(preview["logo_url"].startswith("/branding/examples/logserv/logo.png?v="))
+
+    def test_shipped_bistro_demo_uses_primary_logo_and_soft_colors(self):
+        root = Path(__file__).resolve().parents[1]
+        demo = root / "branding" / "examples" / "logserv"
+        self.assertTrue((demo / "brand.yaml").is_file())
+        logo = demo / "logo.png"
+        group = demo / "group-logo.png"
+        self.assertEqual(logo.read_bytes()[:8], b"\\x89PNG\\r\\n\\x1a\\n")
+        self.assertEqual(group.read_bytes()[:8], b"\\x89PNG\\r\\n\\x1a\\n")
+        brand = read_brand(root, profile="logserv")
+        self.assertEqual(brand["brand_name"], "Bistro Connect")
+        self.assertEqual(brand["layout"], "bistro")
+        self.assertEqual(brand["header_color"], "#fff9ef")
+        self.assertEqual(brand["background_color"], "#fff7d9")
+        self.assertEqual(brand["font_family"], "Calibri")
+        self.assertTrue(brand["logo_url"].startswith("/branding/examples/logserv/logo.png?v="))
+        self.assertTrue(brand["group_logo_url"].startswith("/branding/examples/logserv/group-logo.png?v="))
+        with main.app.test_client() as client:
+            self.assertEqual(client.get("/branding/examples/logserv/group-logo.png").status_code, 200)
+            player = client.get("/demo/logserv").get_data(as_text=True)
+            self.assertIn('id="group-logo"', player)
+            self.assertIn('min-width:1600px', player)
+            self.assertIn('clamp(84px,12vh,130px)', player)
 
     def test_invalid_brand_values_use_safe_defaults(self):
         with tempfile.TemporaryDirectory() as tmp:
