@@ -85,19 +85,21 @@ if a customer needs a totally separate set of feeds **and** different branding a
 
 first attempt looked pretty bad on screen tbh. huge group logo on a white slab, orange everywhere, and news cramped into the remaining space. the screenshot made that obvious.
 
-changed it so **Bistro Connect is the main name**: round bistro logo beside the name + meet · eat · chill. the company's wide group logo is just a small optional thing in the header when the screen is big enough. hidden below ~1600px wide / 800px tall, because it's not worth making the news tiny just to squeeze in 5 more logos.
+changed it so **Bistro Connect is the main name**: round bistro logo beside the name + meet · eat · chill. the Friedrich Friedrich logo WITH claim goes on the right side of the header when the screen has enough room. the separate company-name strip goes in the middle of the footer, not up beside the clock. the Bistro logo/name stay primary.
 
-palette from their supplied file is orange #ec6608 and yellow #ffdd00, but covering a whole TV in both looked wild. this version keeps orange as a thin header edge / footer, uses a really pale yellow (#fff7d9) behind the actual news and a light header (#fff9ef) instead. need to see it on the real TV before deciding if the colors are right. Calibri requested, falls back to Carlito / Arial if missing on the kiosk; haven't committed any proprietary fonts.
+palette from their supplied file is orange #ec6608 and yellow #ffdd00, but covering a whole TV in both looked wild. this version keeps orange as a thin header edge and uses more yellow (#ffef85 header, #ffdd00 footer, #fff8cf news background). need to see it on the real TV before deciding if the colors are right. Calibri requested, falls back to Carlito / Arial if missing on the kiosk; haven't committed any proprietary fonts.
 
 files for the approved public example:
 
 - `branding/examples/logserv/brand.yaml` – name/colors/font/layout, can tweak that
 - `branding/examples/logserv/logo.png` – little Bistro Connect round logo, primary
-- `branding/examples/logserv/group-logo.png` – group wordmark, only when there's room
+- `branding/examples/logserv/claim-logo.png` – Friedrich Friedrich logo with claim, top right when it fits
+- `branding/examples/logserv/footer-banner.png` – the names of the group companies, centered in the footer
+- `branding/examples/logserv/group-logo.png` – the previous group strip kept for comparison, not used in the header now
 
 `http://YOUR_DOCKER_HOST:8085/demo/logserv` is the sample preview. `/` stays my existing normal kiosk. both read the same `content/feeds.txt` for now; demo isn't a second account or some multi-tenant mess. actual customer's files are public here because they explicitly allowed this example, not because we're going to put everyone else's logos in git.
 
-layout is one article at a time, no clickable controls, and uses available space rather than fixed FHD pixel coordinates. at 1280×720 it should show the Bistro identity, clock, one picture and readable article text without group logo; at 1920×1080 it has room for more. gotta verify both on the actual kiosk/browser, not just assume it's perfect from CSS.
+layout is one article at a time, no clickable controls, and uses available space rather than fixed FHD pixel coordinates. at 1280×720 it should show the Bistro identity, clock, one picture and readable article text without cramming in the header claim; at 1920×1080 it has room for more. gotta verify both on the actual kiosk/browser, not just assume it's perfect from CSS.
 
 the 'Friedrich Friedrich wünscht guten Appetit' idea can go in later if they still want it, not cluttering this first version.
 
