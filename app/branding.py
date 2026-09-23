@@ -39,8 +39,11 @@ def read_brand(root, fallback=None, profile=None):
         "header_color": "",
         "footer_color": "",
         "logo_mode": "normal",
+        "layout": "standard",
+        "tagline": "",
         "font_family": "news",
         "logo_url": "",
+        "group_logo_url": "",
         "font_url": "",
     }
     if profile is not None and not re.fullmatch(r"[a-z0-9-]{1,40}", profile):
@@ -62,6 +65,8 @@ def read_brand(root, fallback=None, profile=None):
                         LOG.warning("invalid %s in branding/brand.yaml", field)
                     settings[field] = chosen
             settings["logo_mode"] = "wide" if custom.get("logo_mode") == "wide" else "normal"
+            settings["layout"] = "bistro" if custom.get("layout") == "bistro" else "standard"
+            settings["tagline"] = str(custom.get("tagline") or "")[:80]
             chosen_font = str(custom.get("font_family", "news")).strip()
             if FONT_NAME.fullmatch(chosen_font):
                 settings["font_family"] = chosen_font
@@ -71,6 +76,7 @@ def read_brand(root, fallback=None, profile=None):
             LOG.exception("could not read branding/brand.yaml, keeping default look")
 
     settings["logo_url"] = _file_url(folder, "logo.png", prefix)
+    settings["group_logo_url"] = _file_url(folder, "group-logo.png", prefix)
     settings["font_url"] = _file_url(folder, "font.woff2", prefix)
     if not settings["logo_url"] and not profile:
         # old installations may still have their logo in assets/logo.png
