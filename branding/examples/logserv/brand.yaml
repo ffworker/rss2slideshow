@@ -1,0 +1,14 @@
+# PUBLIC DEMO: this customer allowed us to show its brand as an example.
+# This is only the appearance of /demo/logserv; the RSS feeds remain in content/feeds.txt.
+# From supplied Logserv / group palette: Reinorange #ec6608, Verkehrsgelb #ffdd00.
+brand_name: "Bistro Connect"
+accent_color: "#242424"       # black is readable against the bright yellow news area
+header_color: "#ec6608"       # group orange / the darker yellow requested for the header
+footer_color: "#ec6608"
+background_color: "#ffdd00"   # lighter yellow behind news
+text_color: "#171717"
+font_family: Calibri
+logo_mode: wide              # whole company group's horizontal logo, not the bistro logo
+# Calibri is not bundled: if absent on the kiosk browser, Carlito/Arial is used.
+# For exact font rendering, add a properly licensed font.woff2 to this demo profile.
+# "guten Appetit" text overlay is intentionally not part of this first colors/font/logo demo.
