@@ -154,6 +154,60 @@ body.bistro-layout #counter { font-size:clamp(16px,1.1vw,24px); }
   body.bistro-layout #footer-names { font-size:12px; }
 }
 
+/* TV density pass: use the space at 720p and 1080p, never stretch RSS images.
+   Keep this scoped to the bistro demo so other client layouts stay as-is. */
+@media (min-width:901px) and (orientation:landscape) {
+  body.bistro-layout #page {
+    grid-template-rows:clamp(88px,14vh,154px) minmax(0,1fr) clamp(48px,6vh,66px);
+  }
+  body.bistro-layout main {
+    padding:clamp(14px,2.1vh,28px) clamp(22px,3.4vw,66px) clamp(12px,2.2vh,27px);
+  }
+  body.bistro-layout .story {
+    grid-template-columns:minmax(0,56%) minmax(0,1fr);
+    gap:clamp(18px,2.25vw,44px);
+    align-items:start;
+  }
+  body.bistro-layout .visual {
+    width:100%;
+    height:min(65vh,100%);
+    max-height:none;
+    align-items:flex-start;
+    justify-content:center;
+    overflow:hidden;
+  }
+  body.bistro-layout .visual #picture {
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    object-position:center top;
+  }
+  body.bistro-layout .copy { padding-top:0; gap:clamp(15px,2.2vh,26px); }
+  body.bistro-layout h1 {
+    font-size:clamp(34px,min(3.6vw,6.35vh),72px);
+    line-height:1.13;
+    -webkit-line-clamp:5;
+  }
+  body.bistro-layout h1.long-title {
+    font-size:clamp(30px,min(3.08vw,5.55vh),61px);
+    line-height:1.13;
+  }
+  body.bistro-layout #summary {
+    font-size:clamp(19px,min(1.85vw,3.08vh),34px);
+    line-height:1.39;
+    -webkit-line-clamp:10;
+  }
+  body.bistro-layout #summary.long-summary {
+    font-size:clamp(18px,min(1.60vw,2.75vh),30px);
+    -webkit-line-clamp:12;
+  }
+}
+@media (min-width:901px) and (max-height:760px) and (orientation:landscape) {
+  body.bistro-layout .visual { height:min(62vh,100%); }
+  body.bistro-layout #summary { -webkit-line-clamp:8; }
+  body.bistro-layout #summary.long-summary { -webkit-line-clamp:9; }
+}
+
 /* the optional group logo stays secondary and is only shown when it actually fits */
 @media (min-width:1600px) and (min-height:800px) {
   body.has-group #group-logo.ready { display:block; }
@@ -251,6 +305,9 @@ function show() {
   }
   el("headline").textContent = story.title || "";
   el("summary").textContent = story.summary || "";
+  // Keep very long feed titles/abstracts inside the TV's available height.
+  el("headline").classList.toggle("long-title", (story.title || "").length > 110);
+  el("summary").classList.toggle("long-summary", (story.summary || "").length > 420);
   el("footer").textContent = brand + "  ·  " + (story.source || "RSS");
   el("counter").textContent = String(((index - 1 + articles.length) % articles.length) + 1).padStart(2,"0") +
     " / " + String(articles.length).padStart(2,"0");
