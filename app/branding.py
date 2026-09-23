@@ -44,6 +44,7 @@ def read_brand(root, fallback=None, profile=None):
         "font_family": "news",
         "logo_url": "",
         "group_logo_url": "",
+        "footer_banner_url": "",
         "font_url": "",
     }
     if profile is not None and not re.fullmatch(r"[a-z0-9-]{1,40}", profile):
@@ -76,7 +77,9 @@ def read_brand(root, fallback=None, profile=None):
             LOG.exception("could not read branding/brand.yaml, keeping default look")
 
     settings["logo_url"] = _file_url(folder, "logo.png", prefix)
-    settings["group_logo_url"] = _file_url(folder, "group-logo.png", prefix)
+    settings["group_logo_url"] = (_file_url(folder, "claim-logo.png", prefix)
+                                   or _file_url(folder, "group-logo.png", prefix))
+    settings["footer_banner_url"] = _file_url(folder, "footer-banner.png", prefix)
     settings["font_url"] = _file_url(folder, "font.woff2", prefix)
     if not settings["logo_url"] and not profile:
         # old installations may still have their logo in assets/logo.png
