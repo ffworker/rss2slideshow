@@ -1,7 +1,7 @@
 # Public demo approved by the customer. /demo/logserv only.
 # One kiosk, one feed list. Only the LOOK changes in the demo.
 brand_name: "Bistro Connect"
-tagline: "meet · eat · chill"
+tagline: ""
 layout: bistro
 font_family: Calibri     # fallback: Carlito / Arial; no proprietary font in git
 accent_color: "#ec6608"
@@ -10,8 +10,10 @@ footer_color: "#ffdd00"
 background_color: "#fff8cf" # warmer yellow, not full saturated everywhere
 text_color: "#202020"
 logo_mode: normal
+show_group_logo: false
+source_in_header: true
 # logo.png = Bistro Connect icon (primary)
-# claim-logo.png = Friedrich Friedrich with claim, in the header if it fits
+# header is deliberately Bistro Connect + current news source, no group logo
 # company names are real text instead of the tiny almost-invisible PNG
 footer_names:
   - "Logserv"
