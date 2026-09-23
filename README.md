@@ -81,19 +81,25 @@ if i only get a font *name*, put it under `font_family` for now, e.g. `font_fami
 
 if a customer needs a totally separate set of feeds **and** different branding at the same time, that's another installation/container configuration for now. this is not a multi-customer login system or an on-screen settings menu.
 
-## actual first customer demo (bistro / unternehmensgruppe)
+## actual first customer demo (bistro connect)
 
-got real branding material now and permission to put this demo in the public repo. wanted to check how painless this would actually be for a new customer without messing up the existing live kiosk.
+first attempt looked pretty bad on screen tbh. huge group logo on a white slab, orange everywhere, and news cramped into the remaining space. the screenshot made that obvious.
 
-try `http://YOUR_DOCKER_HOST:8085/demo/logserv`. that URL uses `branding/examples/logserv/brand.yaml` + its own `logo.png`. **the normal `/` keeps using my own local `branding/brand.yaml`**, so i can compare the two looks on the same server. both use the SAME feeds from `content/feeds.txt` for the demo; it isn't a second customer deployment or a separate feed list.
+changed it so **Bistro Connect is the main name**: round bistro logo beside the name + meet · eat · chill. the company's wide group logo is just a small optional thing in the header when the screen is big enough. hidden below ~1600px wide / 800px tall, because it's not worth making the news tiny just to squeeze in 5 more logos.
 
-for this demo i used the **Unternehmensgruppe** logo (not the separate Bistro Connect logo, since it's meant for everybody), their provided Reinorange `#ec6608` on header/footer and Verkehrsgelb `#ffdd00` for the news background. headline/body requested: Calibri. **Calibri is NOT included in this repo.** The browser will use Calibri if installed, otherwise Carlito/Arial, so it won't be pixel-perfect everywhere without an appropriately licensed webfont. a readable black text/accent against that bright yellow; we'll check how this actually looks on a TV before calling it finished. the suggested 'guten Appetit' overlay is for later, not in this first colors/font/logo round.
+palette from their supplied file is orange #ec6608 and yellow #ffdd00, but covering a whole TV in both looked wild. this version keeps orange as a thin header edge / footer, uses a really pale yellow (#fff7d9) behind the actual news and a light header (#fff9ef) instead. need to see it on the real TV before deciding if the colors are right. Calibri requested, falls back to Carlito / Arial if missing on the kiosk; haven't committed any proprietary fonts.
 
-the public demo files (company gave permission) are `branding/examples/logserv/brand.yaml` and `branding/examples/logserv/logo.png`. that's the example i can show someone else. their actual logos/fonts don't get added to git by default.
+files for the approved public example:
 
-**how i'd do a different customer:** copy `branding/brand.example.yaml` to the *local* `branding/brand.yaml`, put their name/colors/font in there, add their allowed PNG logo as `branding/logo.png` and if needed a properly licensed `branding/font.woff2`. for a wide group logo set `logo_mode: wide`, otherwise normal. `header_color` and `footer_color` are optional hex colors. don't touch Python/HTML or the feed list for just the look. brand.yaml / local logo / font are gitignored. if i want a *separate public sample* like this one, it goes in a new `branding/examples/<slug>/` **only with permission to publish those specific files**, and i'd explicitly allow that example in .gitignore. `/demo/<slug>` is the preview URL, not a multi-tenant customer system.
+- `branding/examples/logserv/brand.yaml` – name/colors/font/layout, can tweak that
+- `branding/examples/logserv/logo.png` – little Bistro Connect round logo, primary
+- `branding/examples/logserv/group-logo.png` – group wordmark, only when there's room
 
-first update needs `git pull --ff-only && docker compose up -d --build` because of the new route and mounted example files. afterwards edit the local branding settings and the open kiosk should pick the new look up within about 30 sec. don't upload your customer's private stuff to the public repo, especially font files. also don't mistake customer-logo permission for permission to reuse images from RSS providers.
+`http://YOUR_DOCKER_HOST:8085/demo/logserv` is the sample preview. `/` stays my existing normal kiosk. both read the same `content/feeds.txt` for now; demo isn't a second account or some multi-tenant mess. actual customer's files are public here because they explicitly allowed this example, not because we're going to put everyone else's logos in git.
+
+layout is one article at a time, no clickable controls, and uses available space rather than fixed FHD pixel coordinates. at 1280×720 it should show the Bistro identity, clock, one picture and readable article text without group logo; at 1920×1080 it has room for more. gotta verify both on the actual kiosk/browser, not just assume it's perfect from CSS.
+
+the 'Friedrich Friedrich wünscht guten Appetit' idea can go in later if they still want it, not cluttering this first version.
 
 ## few questions i already had
 
