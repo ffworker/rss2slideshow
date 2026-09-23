@@ -27,6 +27,7 @@ header { display:flex; align-items:center; justify-content:space-between; gap:2v
   letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #tagline { display:none; font-size:clamp(12px,.98vw,18px); letter-spacing:.06em; }
 .header-right { display:flex; align-items:center; gap:clamp(14px,2vw,38px); flex:none; }
+#logo.ready { display:block; }
 #group-logo { display:none; max-width:clamp(180px,18vw,330px); max-height:33px; width:auto;
   height:auto; object-fit:contain; }
 .clock { text-align:right; font-variant-numeric:tabular-nums; flex:none; }
@@ -64,7 +65,7 @@ footer { display:flex; align-items:center; justify-content:space-between; gap:2v
 
 /* the optional group logo stays secondary and is only shown when it actually fits */
 @media (min-width:1600px) and (min-height:800px) {
-  body.has-group #group-logo { display:block; }
+  body.has-group #group-logo.ready { display:block; }
 }
 @media (max-width:940px) {
   .story { grid-template-columns:minmax(0,40%) minmax(0,1fr); gap:20px; }
@@ -135,11 +136,11 @@ function setImage(id, url) {
   const image = el(id);
   if (image.dataset.url === url) return;
   image.dataset.url = url;
-  image.style.display = "none";
+  image.classList.remove("ready");
   image.removeAttribute("src");
   if (!url) return;
-  image.onload = () => { if (image.dataset.url === url) image.style.display = "block"; };
-  image.onerror = () => { if (image.dataset.url === url) image.style.display = "none"; };
+  image.onload = () => { if (image.dataset.url === url) image.classList.add("ready"); };
+  image.onerror = () => { if (image.dataset.url === url) image.classList.remove("ready"); };
   image.src = url;
 }
 function show() {
