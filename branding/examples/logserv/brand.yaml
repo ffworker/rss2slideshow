@@ -5,9 +5,9 @@ tagline: "meet · eat · chill"
 layout: bistro
 font_family: Calibri     # fallback: Carlito / Arial; no proprietary font in git
 accent_color: "#ec6608"
-header_color: "#fff9ef" # light header with an orange edge, not one huge orange block
-footer_color: "#ec6608"
-background_color: "#fff7d9" # lighter yellow is calmer on a big TV
+header_color: "#ffef85" # yellow-first header, orange stays a small accent
+footer_color: "#ffdd00"
+background_color: "#fff8cf" # warmer yellow, not full saturated everywhere
 text_color: "#202020"
 logo_mode: normal
 # logo.png = Bistro Connect icon (primary)
