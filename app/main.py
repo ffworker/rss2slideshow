@@ -169,7 +169,7 @@ def demo(profile):
 
 @app.get("/branding/examples/<profile>/<filename>")
 def demo_asset(profile, filename):
-    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile) or filename not in ("logo.png", "group-logo.png", "font.woff2"):
+    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile) or filename not in ("logo.png", "group-logo.png", "claim-logo.png", "footer-banner.png", "font.woff2"):
         abort(404)
     folder = ROOT / "branding" / "examples" / profile
     if not (folder / "brand.yaml").is_file() or not (folder / filename).is_file():
@@ -179,7 +179,7 @@ def demo_asset(profile, filename):
 
 @app.get("/branding/<filename>")
 def brand_asset(filename):
-    if filename not in ("logo.png", "group-logo.png", "font.woff2"):
+    if filename not in ("logo.png", "group-logo.png", "claim-logo.png", "footer-banner.png", "font.woff2"):
         return "", 404
     folder = ROOT / "branding"
     if not (folder / filename).is_file():
