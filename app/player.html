@@ -70,6 +70,27 @@ footer { display:flex; align-items:center; justify-content:space-between; gap:2v
 #footer-banner { display:none; width:min(61vw,970px); height:clamp(30px,4.4vh,46px);
   object-fit:contain; min-width:0; margin:0 auto; }
 #footer-banner.ready { display:block; }
+#footer-names { display:none; min-width:0; align-items:center; justify-content:center;
+  align-content:center; flex-wrap:wrap; column-gap:clamp(10px,1.15vw,22px); row-gap:2px;
+  font-size:clamp(12px,.86vw,17px); font-weight:700; line-height:1.15; }
+#footer-names .company { white-space:nowrap; }
+#footer-names .company + .company::before { content:"·"; padding-right:clamp(10px,1.15vw,22px);
+  color:var(--accent); }
+footer.has-names { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,4fr) auto;
+  align-items:center; column-gap:clamp(12px,1.5vw,28px); }
+footer.has-names #footer-names { display:flex; }
+footer.has-names #footer { font-size:clamp(12px,.85vw,16px); }
+footer.has-names #footer-banner { display:none; }
+@media (max-width:1400px) {
+  footer.has-names { grid-template-columns:minmax(0,.65fr) minmax(0,4fr) auto; }
+  #footer-names { font-size:clamp(11px,.85vw,14px); column-gap:8px; }
+  #footer-names .company + .company::before { padding-right:8px; }
+}
+@media (max-width:760px) {
+  footer.has-names #footer { display:none; }
+  footer.has-names { grid-template-columns:minmax(0,1fr) auto; }
+  #footer-names { justify-content:flex-start; }
+}
 footer.has-banner { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2.5fr) auto;
   align-items:center; column-gap:clamp(12px,1.5vw,28px); }
 footer.has-banner #footer { font-size:clamp(11px,.8vw,15px); }
@@ -121,7 +142,7 @@ footer.has-banner #footer { font-size:clamp(11px,.8vw,15px); }
     <div class="copy"><h1 id="headline">Nachrichten werden geladen …</h1><p id="summary"></p></div>
   </article>
 </main>
-<footer id="page-footer"><span id="footer">RSS reader</span><img id="footer-banner" alt="Logserv · Friedrich Friedrich · Höhne-Grass · J. & G. Adrian · KS Büromöbel"><span id="counter"></span></footer>
+<footer id="page-footer"><span id="footer">RSS reader</span><div id="footer-names" aria-label="Unternehmensgruppe"></div><img id="footer-banner" alt="Unternehmensgruppe"><span id="counter"></span></footer>
 </div>
 <script>
 "use strict";
@@ -223,7 +244,18 @@ function applySettings(data) {
   const groupUrl = data.group_logo_url || "";
   document.body.classList.toggle("has-group", !!groupUrl);
   setImage("group-logo", groupUrl);
-  const bannerUrl = data.footer_banner_url || "";
+  const names = Array.isArray(data.footer_names) ? data.footer_names.filter(name => typeof name === "string" && name.trim()) : [];
+  const namesElement = el("footer-names");
+  namesElement.replaceChildren();
+  for (const name of names) {
+    const span = document.createElement("span");
+    span.className = "company";
+    span.textContent = name;
+    namesElement.appendChild(span);
+  }
+  const hasNames = names.length > 0;
+  el("page-footer").classList.toggle("has-names", hasNames);
+  const bannerUrl = hasNames ? "" : (data.footer_banner_url || "");
   el("page-footer").classList.toggle("has-banner", !!bannerUrl);
   setImage("footer-banner", bannerUrl);
 
