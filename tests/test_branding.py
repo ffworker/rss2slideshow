@@ -97,8 +97,12 @@ class CustomerBrandTests(unittest.TestCase):
         self.assertTrue((demo / "brand.yaml").is_file())
         logo = demo / "logo.png"
         group = demo / "group-logo.png"
+        claim = demo / "claim-logo.png"
+        footer_banner = demo / "footer-banner.png"
         self.assertEqual(logo.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
         self.assertEqual(group.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
+        self.assertEqual(claim.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
+        self.assertEqual(footer_banner.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
         brand = read_brand(root, profile="logserv")
         self.assertEqual(brand["brand_name"], "Bistro Connect")
         self.assertEqual(brand["layout"], "bistro")
@@ -107,11 +111,15 @@ class CustomerBrandTests(unittest.TestCase):
         self.assertEqual(brand["background_color"], "#fff8cf")
         self.assertEqual(brand["font_family"], "Calibri")
         self.assertTrue(brand["logo_url"].startswith("/branding/examples/logserv/logo.png?v="))
-        self.assertTrue(brand["group_logo_url"].startswith("/branding/examples/logserv/group-logo.png?v="))
+        self.assertTrue(brand["group_logo_url"].startswith("/branding/examples/logserv/claim-logo.png?v="))
+        self.assertTrue(brand["footer_banner_url"].startswith("/branding/examples/logserv/footer-banner.png?v="))
         with main.app.test_client() as client:
             self.assertEqual(client.get("/branding/examples/logserv/group-logo.png").status_code, 200)
+            self.assertEqual(client.get("/branding/examples/logserv/claim-logo.png").status_code, 200)
+            self.assertEqual(client.get("/branding/examples/logserv/footer-banner.png").status_code, 200)
             player = client.get("/demo/logserv").get_data(as_text=True)
             self.assertIn('id="group-logo"', player)
+            self.assertIn('id="footer-banner"', player)
             self.assertIn('min-width:1600px', player)
             self.assertIn('clamp(84px,12vh,130px)', player)
 
