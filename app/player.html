@@ -21,7 +21,10 @@ header { display:flex; align-items:center; justify-content:space-between; gap:2v
   border-bottom:1px solid #d7d0bf; min-width:0; }
 .identity { display:flex; align-items:center; gap:clamp(10px,1.4vw,25px); min-width:0; }
 #logo { display:none; width:clamp(62px,8.5vh,92px); height:clamp(62px,8.5vh,92px);
-  object-fit:contain; flex:none; border-radius:50%; }
+  object-fit:contain; flex:none; border-radius:0; }
+body.bistro-logo #logo { border-radius:50%; }
+body.wide-logo #logo { width:min(28vw,390px); height:auto; max-height:80px; object-fit:contain; }
+body.wide-logo #brand, body.wide-logo #tagline { display:none !important; }
 .brand-copy { display:flex; flex-direction:column; gap:3px; min-width:0; }
 #brand { font-size:clamp(23px,2.35vw,43px); line-height:1.1; font-weight:700;
   letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -202,6 +205,8 @@ function applySettings(data) {
       document.documentElement.style.setProperty(key, "#fff");
     }
   }
+  document.body.classList.toggle("bistro-logo", data.layout === "bistro");
+  document.body.classList.toggle("wide-logo", data.logo_mode === "wide");
   setImage("logo", data.logo_url || "");
   const groupUrl = data.group_logo_url || "";
   document.body.classList.toggle("has-group", !!groupUrl);
