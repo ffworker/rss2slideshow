@@ -110,6 +110,7 @@ class CustomerBrandTests(unittest.TestCase):
         self.assertEqual(brand["footer_color"], "#ffdd00")
         self.assertEqual(brand["background_color"], "#fff8cf")
         self.assertEqual(brand["font_family"], "Calibri")
+        self.assertEqual(brand["footer_names"], ["Logserv", "Friedrich Friedrich", "Höhne-Grass", "J. & G. Adrian", "KS Büromöbel"])
         self.assertTrue(brand["logo_url"].startswith("/branding/examples/logserv/logo.png?v="))
         self.assertTrue(brand["group_logo_url"].startswith("/branding/examples/logserv/claim-logo.png?v="))
         self.assertTrue(brand["footer_banner_url"].startswith("/branding/examples/logserv/footer-banner.png?v="))
@@ -120,6 +121,8 @@ class CustomerBrandTests(unittest.TestCase):
             player = client.get("/demo/logserv").get_data(as_text=True)
             self.assertIn('id="group-logo"', player)
             self.assertIn('id="footer-banner"', player)
+            self.assertIn('id="footer-names"', player)
+            self.assertIn('span.textContent = name', player)
             self.assertIn('min-width:1600px', player)
             self.assertIn('clamp(84px,12vh,130px)', player)
 
