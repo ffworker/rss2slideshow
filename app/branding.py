@@ -45,6 +45,7 @@ def read_brand(root, fallback=None, profile=None):
         "logo_url": "",
         "group_logo_url": "",
         "footer_banner_url": "",
+        "footer_names": [],
         "font_url": "",
     }
     if profile is not None and not re.fullmatch(r"[a-z0-9-]{1,40}", profile):
@@ -68,6 +69,15 @@ def read_brand(root, fallback=None, profile=None):
             settings["logo_mode"] = "wide" if custom.get("logo_mode") == "wide" else "normal"
             settings["layout"] = "bistro" if custom.get("layout") == "bistro" else "standard"
             settings["tagline"] = str(custom.get("tagline") or "")[:80]
+            # text, not a microscopic banner picture: reads well on HD and full HD
+            names = custom.get("footer_names", [])
+            if isinstance(names, list):
+                settings["footer_names"] = [
+                    str(name).strip()[:48] for name in names[:6]
+                    if isinstance(name, str) and name.strip()
+                ]
+            elif names:
+                LOG.warning("footer_names should be a YAML list")
             chosen_font = str(custom.get("font_family", "news")).strip()
             if FONT_NAME.fullmatch(chosen_font):
                 settings["font_family"] = chosen_font
