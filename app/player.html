@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RSS kiosk</title>
 <style>
-:root { --accent: #8b3932; --paper: #f8f7f3; --ink: #242424; --muted: #66645e; --line: #cbc8c0; }
+:root { --accent: #8b3932; --paper: #f8f7f3; --ink: #242424; --muted: #66645e; --line: #cbc8c0; --body-font: Arial, Helvetica, sans-serif; --heading-font: Georgia, serif; }
 * { box-sizing: border-box; }
 html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { background: var(--paper); color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body-font); }
 #page { height: 100dvh; width: 100vw; padding: 3.5vh 4.5vw 2.5vh; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 0; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 2vw; padding-bottom: 2.2vh; }
 .identity { display: flex; align-items: center; min-width: 0; gap: 1.2vw; }
@@ -26,8 +26,8 @@ main { min-height: 0; display: grid; grid-template-rows: auto minmax(0,1fr); pad
 .photo { min-height: 0; height: 100%; width: 100%; display: grid; place-items: center; background: #eeece5; border: 1px solid var(--line); overflow: hidden; }
 #picture { width: 100%; height: 100%; object-fit: contain; display: none; }
 .copy { min-width: 0; min-height: 0; padding-top: .2vh; display: flex; flex-direction: column; gap: 2.3vh; }
-h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(2rem,3.55vw,5.1rem); line-height: 1.14; letter-spacing: -.018em; margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-#summary { color: #454545; font-size: clamp(1.18rem,1.67vw,2.2rem); line-height: 1.45; margin: 0; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+h1 { font-family: var(--heading-font); font-size: clamp(2rem,3.55vw,5.1rem); line-height: 1.14; letter-spacing: -.018em; margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+#summary { color: var(--ink); font-size: clamp(1.18rem,1.67vw,2.2rem); line-height: 1.45; margin: 0; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
 #story.no-picture { grid-template-columns: 1fr; }
 #story.no-picture .photo { display: none; }
 #story.no-picture .copy { max-width: 85%; }
@@ -65,7 +65,7 @@ footer { border-top: 1px solid var(--line); padding-top: 1.6vh; display: flex; j
 const $ = id => document.getElementById(id);
 let queue = [], position = 0, currentId = "", duration = 20000, timer = null;
 let timezone = "Europe/Berlin", serverTime = null, syncedAt = 0;
-let brand = "RSS reader";
+let brand = "RSS reader", activeFontUrl = "";
 const clockDate = () => serverTime === null ? new Date() : new Date(serverTime + performance.now() - syncedAt);
 
 function updateClock() {
@@ -118,11 +118,48 @@ function applySettings(data) {
   if (/^#[0-9a-fA-F]{6}$/.test(data.accent_color || "")) {
     document.documentElement.style.setProperty("--accent", data.accent_color);
   }
-  // logo is optional, no extra settings or broken-image icon
+  // customer assets live on the Docker host; this works while the kiosk is open.
+  for (const [key, setting] of [["--paper", data.background_color], ["--ink", data.text_color]]) {
+    if (/^#[0-9a-fA-F]{6}$/.test(setting || "")) {
+      document.documentElement.style.setProperty(key, setting);
+    }
+  }
   const logo = $("logo");
-  logo.onerror = () => { logo.style.display = "none"; };
-  logo.onload = () => { logo.style.display = "block"; };
-  if (!logo.dataset.checked) { logo.dataset.checked = "yes"; logo.src = "/assets/logo.png"; }
+  const logoUrl = data.logo_url || "";
+  if (logo.dataset.url !== logoUrl) {
+    logo.dataset.url = logoUrl;
+    logo.style.display = "none";
+    if (logoUrl) logo.src = logoUrl;
+    else logo.removeAttribute("src");
+  }
+  const name = data.font_family || "news";
+  const presets = {
+    news: ["Arial, Helvetica, sans-serif", "Georgia, serif"],
+    sans: ["Arial, Helvetica, sans-serif", "Arial, Helvetica, sans-serif"],
+    serif: ["Georgia, serif", "Georgia, serif"],
+    mono: ['"Courier New", monospace', '"Courier New", monospace']
+  };
+  const fonts = presets[name] || [JSON.stringify(name) + ", Arial, sans-serif", JSON.stringify(name) + ", Arial, sans-serif"];
+  const setFonts = (body, headline) => {
+    document.documentElement.style.setProperty("--body-font", body);
+    document.documentElement.style.setProperty("--heading-font", headline);
+  };
+  const fontUrl = data.font_url || "";
+  if (fontUrl !== activeFontUrl) {
+    activeFontUrl = fontUrl;
+    setFonts(fonts[0], fonts[1]);
+    if (fontUrl && /^\/branding\/font\.woff2\?v=\d+$/.test(fontUrl)) {
+      const family = "CustomerFont" + fontUrl.split("v=")[1];
+      const newFont = new FontFace(family, 'url("' + fontUrl + '") format("woff2")');
+      newFont.load().then(loaded => {
+        if (activeFontUrl !== fontUrl) return;
+        document.fonts.add(loaded);
+        setFonts('"' + family + '", ' + fonts[0], '"' + family + '", ' + fonts[1]);
+      }).catch(error => console.warn("could not load customer font", error));
+    }
+  } else if (!fontUrl) {
+    setFonts(fonts[0], fonts[1]);
+  }
   const seconds = Number(data.slide_seconds);
   const wanted = Number.isFinite(seconds) && seconds >= 5 ? seconds * 1000 : 20000;
   if (timer === null || wanted !== duration) {
@@ -158,6 +195,8 @@ async function update() {
     console.warn("RSS reader refresh failed", err);
   }
 }
+$("logo").onerror = () => { $("logo").style.display = "none"; };
+$("logo").onload = () => { $("logo").style.display = "block"; };
 updateClock();
 update();
 setInterval(updateClock, 1000);
