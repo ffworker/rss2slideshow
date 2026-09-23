@@ -41,6 +41,8 @@ def read_brand(root, fallback=None, profile=None):
         "logo_mode": "normal",
         "layout": "standard",
         "tagline": "",
+        "show_group_logo": True,
+        "source_in_header": False,
         "font_family": "news",
         "logo_url": "",
         "group_logo_url": "",
@@ -69,6 +71,8 @@ def read_brand(root, fallback=None, profile=None):
             settings["logo_mode"] = "wide" if custom.get("logo_mode") == "wide" else "normal"
             settings["layout"] = "bistro" if custom.get("layout") == "bistro" else "standard"
             settings["tagline"] = str(custom.get("tagline") or "")[:80]
+            settings["show_group_logo"] = custom.get("show_group_logo", True) is not False
+            settings["source_in_header"] = custom.get("source_in_header", False) is True
             # text, not a microscopic banner picture: reads well on HD and full HD
             names = custom.get("footer_names", [])
             if isinstance(names, list):
