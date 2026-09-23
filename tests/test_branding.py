@@ -57,6 +57,39 @@ class CustomerBrandTests(unittest.TestCase):
                     self.assertEqual(data["logo_url"], settings["logo_url"])
                     self.assertEqual(data["font_url"], settings["font_url"])
 
+    def test_approved_demo_is_separate_from_live_customer_brand(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local = root / "branding"
+            local.mkdir()
+            (local / "brand.yaml").write_text(
+                'brand_name: "Live client"\naccent_color: "#123456"\n', encoding="utf-8"
+            )
+            demo = local / "examples" / "logserv"
+            demo.mkdir(parents=True)
+            (demo / "brand.yaml").write_text(
+                'brand_name: "Bistro Connect"\nheader_color: "#ec6608"\n'
+                'footer_color: "#ec6608"\nbackground_color: "#ffdd00"\n'
+                'font_family: Calibri\nlogo_mode: wide\n', encoding="utf-8"
+            )
+            (demo / "logo.png").write_bytes(b"logo")
+            with patch.object(main, "ROOT", root):
+                with main.app.test_client() as client:
+                    live = client.get("/api/articles").get_json()
+                    preview = client.get("/api/articles?demo=logserv").get_json()
+                    self.assertEqual(client.get("/demo/logserv").status_code, 200)
+                    self.assertEqual(client.get("/demo/unknown").status_code, 404)
+                    self.assertEqual(client.get("/api/articles?demo=unknown").status_code, 404)
+                    self.assertEqual(client.get("/branding/examples/logserv/brand.yaml").status_code, 404)
+                    self.assertEqual(client.get("/branding/examples/logserv/logo.png").status_code, 200)
+            self.assertEqual(live["brand_name"], "Live client")
+            self.assertEqual(preview["brand_name"], "Bistro Connect")
+            self.assertEqual(preview["background_color"], "#ffdd00")
+            self.assertEqual(preview["header_color"], "#ec6608")
+            self.assertEqual(preview["font_family"], "Calibri")
+            self.assertEqual(preview["logo_mode"], "wide")
+            self.assertTrue(preview["logo_url"].startswith("/branding/examples/logserv/logo.png?v="))
+
     def test_invalid_brand_values_use_safe_defaults(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp) / "branding"
