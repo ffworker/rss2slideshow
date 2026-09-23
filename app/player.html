@@ -1,224 +1,280 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RSS kiosk</title>
 <style>
-:root { --accent: #8b3932; --paper: #f8f7f3; --ink: #242424; --muted: #66645e; --line: #cbc8c0; --body-font: Arial, Helvetica, sans-serif; --heading-font: Georgia, serif; --header-bg: transparent; --footer-bg: transparent; }
-* { box-sizing: border-box; }
-html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { background: var(--paper); color: var(--ink); font-family: var(--body-font); }
-#page { height: 100dvh; width: 100vw; padding: 3.5vh 4.5vw 2.5vh; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 0; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 2vw; margin: -3.5vh -4.5vw 0; padding: 3.5vh 4.5vw 2.2vh; background: var(--header-bg); }
-.identity { display: flex; align-items: center; min-width: 0; gap: 1.2vw; }
-#logo { display: none; max-width: 4.8vw; max-height: 6vh; object-fit: contain; }
-/* sample customer's wide group logo needs a white strip on the orange header */
-.wide-logo #logo { max-width: min(63vw, 1150px); max-height: 9vh; background: #fff; padding: .65vh 1vw; object-fit: contain; }
-.wide-logo header { min-height: 12vh; }
-.themed-footer footer { color: var(--ink); border-top-color: transparent; }
-.themed-header #date { color: var(--ink); }
-.wide-logo #brand { display: none; }
-.wide-logo .identity { min-width: 0; }
-@media (max-width: 820px) and (orientation: portrait) {
-  .wide-logo #logo { max-width: 62vw; max-height: 7vh; }
+:root {
+  --accent:#8b3932; --paper:#f8f7f3; --ink:#242424;
+  --header-bg:#fff; --footer-bg:#fff; --body-font:Arial,Helvetica,sans-serif;
+  --heading-font:Georgia,serif;
 }
-#brand { font-size: clamp(1.4rem,2.6vw,3.5rem); font-weight: 800; letter-spacing: -.035em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.clock { min-width: max-content; text-align: right; font-variant-numeric: tabular-nums; }
-#time { display: block; font-size: clamp(1.15rem,1.85vw,2.4rem); font-weight: 700; }
-#date { display: block; font-size: clamp(.8rem,.92vw,1.1rem); color: var(--muted); margin-top: .3vh; }
-.rule { border-top: 1px solid var(--line); height: 0; position: relative; }
-.rule:before { content: ""; position: absolute; top: -3px; left: 0; width: 7vw; height: 4px; background: var(--accent); }
-main { min-height: 0; display: grid; grid-template-rows: auto minmax(0,1fr); padding-top: 3.3vh; }
-.overline { color: var(--accent); display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; font-size: clamp(.82rem,1.15vw,1.4rem); font-weight: 700; letter-spacing: .045em; text-transform: uppercase; margin-bottom: 2.3vh; }
-#published { font-size: clamp(.78rem,.9vw,1.05rem); font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
-.story { min-height: 0; display: grid; grid-template-columns: minmax(0,44%) minmax(0,1fr); gap: 3.5vw; align-items: start; }
-.photo { min-height: 0; height: 100%; width: 100%; display: grid; place-items: center; background: #eeece5; border: 1px solid var(--line); overflow: hidden; }
-#picture { width: 100%; height: 100%; object-fit: contain; display: none; }
-.copy { min-width: 0; min-height: 0; padding-top: .2vh; display: flex; flex-direction: column; gap: 2.3vh; }
-h1 { font-family: var(--heading-font); font-size: clamp(2rem,3.55vw,5.1rem); line-height: 1.14; letter-spacing: -.018em; margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-#summary { color: var(--ink); font-size: clamp(1.18rem,1.67vw,2.2rem); line-height: 1.45; margin: 0; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
-#story.no-picture { grid-template-columns: 1fr; }
-#story.no-picture .photo { display: none; }
-#story.no-picture .copy { max-width: 85%; }
-#story.no-picture h1 { font-size: clamp(2.3rem,4.5vw,6.1rem); -webkit-line-clamp: 5; }
-footer { border-top: 1px solid var(--line); padding: 1.6vh 4.5vw 2.5vh; margin: 2.5vh -4.5vw -2.5vh; background: var(--footer-bg); display: flex; justify-content: space-between; gap: 2vw; align-items: center; color: var(--muted); font-size: clamp(.8rem,1vw,1.3rem); margin-top: 2.5vh; }
-#counter { font-variant-numeric: tabular-nums; }
-#empty { grid-column: 1 / -1; align-self: center; justify-self: center; color: var(--muted); font-size: clamp(1.1rem,2vw,2rem); text-align: center; }
-@media (max-width: 820px) and (orientation: portrait) {
-  .story { grid-template-columns: 1fr; grid-template-rows: minmax(0,42%) minmax(0,1fr); gap: 2vh; }
-  h1 { font-size: clamp(1.7rem,4.5vw,3.5rem); -webkit-line-clamp: 5; }
-  #summary { font-size: clamp(1rem,2.5vw,1.7rem); -webkit-line-clamp: 4; }
-  .copy { gap: 1.4vh; }
-  #story.no-picture .copy { max-width: 100%; }
+* { box-sizing:border-box; }
+html,body { margin:0; width:100%; height:100%; overflow:hidden; }
+body { color:var(--ink); background:var(--paper); font-family:var(--body-font); }
+#page { width:100vw; height:100vh; height:100dvh; display:grid;
+  grid-template-rows:clamp(84px,12vh,130px) minmax(0,1fr) clamp(40px,6vh,62px); }
+header { display:flex; align-items:center; justify-content:space-between; gap:2vw;
+  padding:10px clamp(18px,3vw,58px); background:var(--header-bg);
+  border-top:clamp(4px,.7vh,8px) solid var(--accent);
+  border-bottom:1px solid #d7d0bf; min-width:0; }
+.identity { display:flex; align-items:center; gap:clamp(10px,1.4vw,25px); min-width:0; }
+#logo { display:none; width:clamp(62px,8.5vh,92px); height:clamp(62px,8.5vh,92px);
+  object-fit:contain; flex:none; border-radius:50%; }
+.brand-copy { display:flex; flex-direction:column; gap:3px; min-width:0; }
+#brand { font-size:clamp(23px,2.35vw,43px); line-height:1.1; font-weight:700;
+  letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#tagline { display:none; font-size:clamp(12px,.98vw,18px); letter-spacing:.06em; }
+.header-right { display:flex; align-items:center; gap:clamp(14px,2vw,38px); flex:none; }
+#group-logo { display:none; max-width:clamp(180px,18vw,330px); max-height:33px; width:auto;
+  height:auto; object-fit:contain; }
+.clock { text-align:right; font-variant-numeric:tabular-nums; flex:none; }
+#time { display:block; font-weight:700; font-size:clamp(20px,1.7vw,33px); line-height:1.1; }
+#date { display:block; font-size:clamp(11px,.8vw,15px); margin-top:5px; }
+main { min-width:0; min-height:0; padding:clamp(18px,2.1vw,42px) clamp(18px,3vw,58px);
+  display:grid; grid-template-rows:auto minmax(0,1fr); gap:clamp(14px,2vh,26px); }
+.meta { display:flex; align-items:baseline; justify-content:space-between; gap:2vw; min-width:0;
+  border-bottom:1px solid rgba(30,30,30,.18); padding-bottom:clamp(9px,1.2vh,14px); }
+#source { font-size:clamp(14px,1.1vw,21px); line-height:1.2; font-weight:700; color:var(--accent);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#published { font-size:clamp(12px,.85vw,16px); white-space:nowrap; flex:none; opacity:.75; }
+.story { display:grid; grid-template-columns:minmax(0,43%) minmax(0,1fr);
+  gap:clamp(22px,3vw,60px); min-width:0; min-height:0; align-items:start; }
+.visual { min-width:0; height:min(100%,53vh); max-height:590px; display:flex;
+  align-items:center; justify-content:center; overflow:hidden; background:#fffaf2;
+  border:1px solid rgba(30,30,30,.12); }
+#picture { width:100%; height:100%; object-fit:contain; display:none; }
+.copy { min-width:0; min-height:0; display:flex; flex-direction:column;
+  gap:clamp(12px,2.2vh,30px); padding-top:clamp(0px,.5vh,8px); }
+h1 { font-family:var(--heading-font); margin:0; font-size:clamp(28px,3.05vw,59px);
+  font-weight:700; line-height:1.14; letter-spacing:-.022em;
+  overflow-wrap:break-word; display:-webkit-box; -webkit-box-orient:vertical;
+  -webkit-line-clamp:5; overflow:hidden; }
+#summary { margin:0; font-size:clamp(16px,1.43vw,27px); line-height:1.43;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; }
+.story.no-picture { grid-template-columns:1fr; }
+.story.no-picture .visual { display:none; }
+.story.no-picture .copy { max-width:min(100%,1100px); }
+footer { display:flex; align-items:center; justify-content:space-between; gap:2vw;
+  padding:0 clamp(18px,3vw,58px); background:var(--footer-bg);
+  border-top:2px solid var(--accent); font-size:clamp(12px,.95vw,18px); min-width:0; }
+#footer { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#counter { white-space:nowrap; flex:none; font-variant-numeric:tabular-nums; font-weight:700; }
+
+/* the optional group logo stays secondary and is only shown when it actually fits */
+@media (min-width:1600px) and (min-height:800px) {
+  body.has-group #group-logo { display:block; }
+}
+@media (max-width:940px) {
+  .story { grid-template-columns:minmax(0,40%) minmax(0,1fr); gap:20px; }
+  h1 { font-size:clamp(26px,3.2vw,38px); }
+  #summary { font-size:clamp(15px,1.65vw,20px); }
+}
+@media (max-width:680px) and (orientation:portrait) {
+  #page { grid-template-rows:76px minmax(0,1fr) 40px; }
+  #logo { width:55px; height:55px; }
+  #brand { font-size:20px; }
+  .clock #date { display:none; }
+  main { padding:13px 16px; gap:12px; }
+  #published { display:none; }
+  .story { grid-template-columns:1fr; grid-template-rows:minmax(0,38%) minmax(0,1fr); gap:14px; }
+  .visual { height:100%; }
+  h1 { font-size:clamp(22px,5vw,34px); -webkit-line-clamp:4; }
+  #summary { font-size:clamp(14px,3vw,19px); -webkit-line-clamp:4; }
+  .story.no-picture { grid-template-rows:1fr; }
 }
 </style>
 </head>
 <body>
 <div id="page">
 <header>
-  <div class="identity"><img id="logo" alt=""><div id="brand">RSS kiosk</div></div>
-  <div class="clock"><span id="time">--:--:--</span><span id="date"></span></div>
-</header>
-<div class="rule"></div>
-<main>
-  <div class="overline"><span id="source">NEWS</span><span id="published"></span></div>
-  <div class="story no-picture" id="story">
-    <div class="photo"><img id="picture" alt=""></div>
-    <div class="copy"><h1 id="headline">Loading feeds ...</h1><p id="summary"></p></div>
+  <div class="identity">
+    <img id="logo" alt="">
+    <div class="brand-copy"><div id="brand">RSS kiosk</div><div id="tagline"></div></div>
   </div>
+  <div class="header-right">
+    <img id="group-logo" alt="Unternehmensgruppe">
+    <div class="clock"><span id="time">--:--</span><span id="date"></span></div>
+  </div>
+</header>
+<main>
+  <div class="meta"><span id="source">Nachrichten</span><span id="published"></span></div>
+  <article class="story no-picture" id="story">
+    <div class="visual"><img id="picture" alt=""></div>
+    <div class="copy"><h1 id="headline">Nachrichten werden geladen …</h1><p id="summary"></p></div>
+  </article>
 </main>
 <footer><span id="footer">RSS reader</span><span id="counter"></span></footer>
 </div>
 <script>
 "use strict";
-const $ = id => document.getElementById(id);
-let queue = [], position = 0, currentId = "", duration = 20000, timer = null;
-let timezone = "Europe/Berlin", serverTime = null, syncedAt = 0;
-let brand = "RSS reader", activeFontUrl = "";
-const demoProfile = /^\/demo\/[a-z0-9-]{1,40}$/.test(location.pathname) ? location.pathname.split("/").pop() : "";
-const clockDate = () => serverTime === null ? new Date() : new Date(serverTime + performance.now() - syncedAt);
+const el = id => document.getElementById(id);
+const demoProfile = /^\/demo\/[a-z0-9-]{1,40}\/?$/.test(location.pathname) ?
+  location.pathname.split("/").filter(Boolean).pop() : "";
+let articles = [], index = 0, displayedId = "", seconds = 20, timer = null;
+let zone = "Europe/Berlin", syncTime = null, syncAt = 0, brand = "RSS reader";
+let currentFontUrl = "", fontRequest = 0, photoRequest = 0;
 
-function updateClock() {
-  const now = clockDate();
+function now() {
+  return syncTime === null ? new Date() : new Date(syncTime + performance.now() - syncAt);
+}
+function clock() {
+  const date = now();
   try {
-    $("time").textContent = new Intl.DateTimeFormat("de-DE", { timeZone: timezone, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(now);
-    $("date").textContent = new Intl.DateTimeFormat("de-DE", { timeZone: timezone, weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }).format(now);
+    el("time").textContent = new Intl.DateTimeFormat("de-DE",
+      {timeZone:zone, hour:"2-digit", minute:"2-digit", second:"2-digit"}).format(date);
+    el("date").textContent = new Intl.DateTimeFormat("de-DE",
+      {timeZone:zone, weekday:"short", day:"2-digit", month:"2-digit", year:"numeric"}).format(date);
   } catch (_) {
-    $("time").textContent = now.toLocaleTimeString();
-    $("date").textContent = now.toLocaleDateString();
+    el("time").textContent = date.toLocaleTimeString();
+    el("date").textContent = date.toLocaleDateString();
   }
 }
-
-function showArticle() {
-  if (!queue.length) return;
-  const article = queue[position % queue.length];
-  position = (position + 1) % queue.length;
-  currentId = article.id;
-  $("source").textContent = article.source || "RSS";
-  $("headline").textContent = article.title || "";
-  $("summary").textContent = article.summary || "";
-  $("footer").textContent = brand + "  /  " + (article.source || "RSS");
-  $("counter").textContent = String(((position - 1 + queue.length) % queue.length) + 1).padStart(2, "0") + " / " + String(queue.length).padStart(2, "0");
-  $("published").textContent = "";
-  if (article.published) {
-    const d = new Date(article.published);
-    if (!isNaN(d.getTime())) {
-      try { $("published").textContent = new Intl.DateTimeFormat("de-DE", { timeZone: timezone, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(d); }
-      catch (_) { $("published").textContent = d.toLocaleString(); }
+function setImage(id, url) {
+  const image = el(id);
+  if (image.dataset.url === url) return;
+  image.dataset.url = url;
+  image.style.display = "none";
+  image.removeAttribute("src");
+  if (!url) return;
+  image.onload = () => { if (image.dataset.url === url) image.style.display = "block"; };
+  image.onerror = () => { if (image.dataset.url === url) image.style.display = "none"; };
+  image.src = url;
+}
+function show() {
+  if (!articles.length) return;
+  const story = articles[index % articles.length];
+  index = (index + 1) % articles.length;
+  displayedId = story.id;
+  el("source").textContent = story.source || "RSS";
+  el("headline").textContent = story.title || "";
+  el("summary").textContent = story.summary || "";
+  el("footer").textContent = brand + "  ·  " + (story.source || "RSS");
+  el("counter").textContent = String(((index - 1 + articles.length) % articles.length) + 1).padStart(2,"0") +
+    " / " + String(articles.length).padStart(2,"0");
+  el("published").textContent = "";
+  if (story.published) {
+    const d = new Date(story.published);
+    if (!Number.isNaN(d.getTime())) {
+      try {
+        el("published").textContent = new Intl.DateTimeFormat("de-DE",
+          {timeZone:zone, day:"2-digit", month:"2-digit", year:"numeric",
+           hour:"2-digit", minute:"2-digit"}).format(d);
+      } catch (_) { el("published").textContent = d.toLocaleString(); }
     }
   }
-  $("picture").style.display = "none";
-  $("picture").removeAttribute("src");
-  $("story").classList.add("no-picture");
-  // feed pictures can be missing or forbid hotlinking. show text alone if so.
-  if (article.image && /^https:\/\//i.test(article.image)) {
-    $("picture").onload = () => { $("picture").style.display = "block"; $("story").classList.remove("no-picture"); };
-    $("picture").onerror = () => { $("picture").style.display = "none"; $("story").classList.add("no-picture"); };
-    $("picture").src = article.image;
+  const image = el("picture"), request = ++photoRequest;
+  image.style.display = "none";
+  image.removeAttribute("src");
+  el("story").classList.add("no-picture");
+  if (story.image && /^https:\/\//i.test(story.image)) {
+    image.onload = () => {
+      if (request !== photoRequest) return;
+      image.style.display = "block";
+      el("story").classList.remove("no-picture");
+    };
+    image.onerror = () => {
+      if (request !== photoRequest) return;
+      image.style.display = "none";
+      el("story").classList.add("no-picture");
+    };
+    image.src = story.image;
   }
 }
-
 function applySettings(data) {
-  timezone = data.timezone || timezone;
-  serverTime = Number(data.server_time_ms);
-  syncedAt = performance.now();
+  zone = data.timezone || zone;
+  syncTime = Number(data.server_time_ms);
+  syncAt = performance.now();
   brand = data.brand_name || brand;
-  $("brand").textContent = brand;
+  el("brand").textContent = brand;
   document.title = brand;
-  if (/^#[0-9a-fA-F]{6}$/.test(data.accent_color || "")) {
-    document.documentElement.style.setProperty("--accent", data.accent_color);
-  }
-  // customer assets live on the Docker host; this works while the kiosk is open.
-  for (const [key, setting] of [["--paper", data.background_color], ["--ink", data.text_color]]) {
-    if (/^#[0-9a-fA-F]{6}$/.test(setting || "")) {
-      document.documentElement.style.setProperty(key, setting);
+  const tagline = String(data.tagline || "").trim();
+  el("tagline").textContent = tagline;
+  el("tagline").style.display = tagline ? "block" : "none";
+  const colors = {"--accent":data.accent_color, "--paper":data.background_color,
+    "--ink":data.text_color, "--header-bg":data.header_color, "--footer-bg":data.footer_color};
+  for (const [key, value] of Object.entries(colors)) {
+    if (/^#[0-9a-fA-F]{6}$/.test(value || "")) {
+      document.documentElement.style.setProperty(key, value);
+    } else if (key === "--header-bg" || key === "--footer-bg") {
+      document.documentElement.style.setProperty(key, "#fff");
     }
   }
-  for (const [key, setting] of [["--header-bg", data.header_color], ["--footer-bg", data.footer_color]]) {
-    document.documentElement.style.setProperty(key, /^#[0-9a-fA-F]{6}$/.test(setting || "") ? setting : "transparent");
-  }
-  document.body.classList.toggle("themed-header", /^#[0-9a-fA-F]{6}$/.test(data.header_color || ""));
-  document.body.classList.toggle("themed-footer", /^#[0-9a-fA-F]{6}$/.test(data.footer_color || ""));
-  const logo = $("logo");
-  const logoUrl = data.logo_url || "";
-  if (logo.dataset.url !== logoUrl) {
-    logo.dataset.url = logoUrl;
-    logo.style.display = "none";
-    if (logoUrl) logo.src = logoUrl;
-    else logo.removeAttribute("src");
-  }
-  document.body.classList.toggle("wide-logo", data.logo_mode === "wide");
-  const name = data.font_family || "news";
+  setImage("logo", data.logo_url || "");
+  const groupUrl = data.group_logo_url || "";
+  document.body.classList.toggle("has-group", !!groupUrl);
+  setImage("group-logo", groupUrl);
+
+  const name = String(data.font_family || "news");
   const presets = {
-    news: ["Arial, Helvetica, sans-serif", "Georgia, serif"],
-    sans: ["Arial, Helvetica, sans-serif", "Arial, Helvetica, sans-serif"],
-    serif: ["Georgia, serif", "Georgia, serif"],
-    mono: ['"Courier New", monospace', '"Courier New", monospace'],
-    Calibri: ['"Calibri", "Carlito", Arial, sans-serif', '"Calibri", "Carlito", Arial, sans-serif']
+    news:["Arial,Helvetica,sans-serif","Georgia,serif"],
+    sans:["Arial,Helvetica,sans-serif","Arial,Helvetica,sans-serif"],
+    serif:["Georgia,serif","Georgia,serif"],
+    mono:['"Courier New",monospace','"Courier New",monospace'],
+    Calibri:['Calibri,Carlito,Arial,sans-serif','Calibri,Carlito,Arial,sans-serif']
   };
-  const fonts = presets[name] || [JSON.stringify(name) + ", Arial, sans-serif", JSON.stringify(name) + ", Arial, sans-serif"];
-  const setFonts = (body, headline) => {
-    document.documentElement.style.setProperty("--body-font", body);
-    document.documentElement.style.setProperty("--heading-font", headline);
+  const fonts = presets[name] || [JSON.stringify(name)+",Arial,sans-serif", JSON.stringify(name)+",Arial,sans-serif"];
+  const setFonts = (body,heading) => {
+    document.documentElement.style.setProperty("--body-font",body);
+    document.documentElement.style.setProperty("--heading-font",heading);
   };
   const fontUrl = data.font_url || "";
-  if (fontUrl !== activeFontUrl) {
-    activeFontUrl = fontUrl;
-    setFonts(fonts[0], fonts[1]);
-    if (fontUrl && /^\/branding\/font\.woff2\?v=\d+$/.test(fontUrl)) {
-      const family = "CustomerFont" + fontUrl.split("v=")[1];
-      const newFont = new FontFace(family, 'url("' + fontUrl + '") format("woff2")');
-      newFont.load().then(loaded => {
-        if (activeFontUrl !== fontUrl) return;
+  if (fontUrl !== currentFontUrl || !fontUrl) {
+    currentFontUrl = fontUrl;
+    setFonts(fonts[0],fonts[1]);
+    const token = ++fontRequest;
+    if (fontUrl && /^\/branding\/(?:examples\/[a-z0-9-]{1,40}\/)?font\.woff2\?v=\d+$/.test(fontUrl)) {
+      const face = new FontFace("KioskCustomer"+token,
+        'url("'+fontUrl+'") format("woff2")');
+      face.load().then(loaded => {
+        if (token !== fontRequest) return;
         document.fonts.add(loaded);
-        setFonts('"' + family + '", ' + fonts[0], '"' + family + '", ' + fonts[1]);
-      }).catch(error => console.warn("could not load customer font", error));
+        setFonts('"'+loaded.family+'",'+fonts[0],'"'+loaded.family+'",'+fonts[1]);
+      }).catch(err => console.warn("customer font unavailable",err));
     }
-  } else if (!fontUrl) {
-    setFonts(fonts[0], fonts[1]);
   }
-  const seconds = Number(data.slide_seconds);
-  const wanted = Number.isFinite(seconds) && seconds >= 5 ? seconds * 1000 : 20000;
-  if (timer === null || wanted !== duration) {
-    duration = wanted;
+  const wanted = Number(data.slide_seconds);
+  const next = Number.isFinite(wanted) && wanted >= 5 ? wanted : 20;
+  if (timer === null || seconds !== next) {
+    seconds = next;
     if (timer) clearInterval(timer);
-    timer = setInterval(showArticle, duration);
+    timer = setInterval(show, seconds*1000);
   }
-  updateClock();
+  clock();
 }
-
 async function update() {
   try {
-    const response = await fetch("/api/articles" + (demoProfile ? "?demo=" + encodeURIComponent(demoProfile) : ""), { cache: "no-store" });
-    if (!response.ok) throw Error("HTTP " + response.status);
+    const url = "/api/articles" + (demoProfile ? "?demo="+encodeURIComponent(demoProfile) : "");
+    const response = await fetch(url,{cache:"no-store"});
+    if (!response.ok) throw Error("HTTP "+response.status);
     const data = await response.json();
     applySettings(data);
-    if (!Array.isArray(data.articles) || !data.articles.length) {
-      if (!queue.length) $("headline").textContent = "Waiting for the first articles ...";
+    const incoming = Array.isArray(data.articles) ? data.articles : [];
+    if (!incoming.length) {
+      articles = [];
+      displayedId = "";
+      el("headline").textContent = "Warte auf RSS-Nachrichten …";
+      el("summary").textContent = "";
+      el("counter").textContent = "";
+      ++photoRequest;
+      el("picture").style.display = "none";
+      el("story").classList.add("no-picture");
       return;
     }
-    const newQueue = data.articles;
-    const existing = newQueue.findIndex(item => item.id === currentId);
-    queue = newQueue;
-    if (existing < 0) {
-      position = 0;
-      showArticle();
-    } else {
-      position = (existing + 1) % queue.length;
-      $("counter").textContent = String(existing + 1).padStart(2, "0") + " / " + String(queue.length).padStart(2, "0");
-    }
-  } catch (err) {
-    if (!queue.length) $("headline").textContent = "Couldn't load feeds. Checking again shortly.";
-    console.warn("RSS reader refresh failed", err);
+    const old = incoming.findIndex(item => item.id === displayedId);
+    articles = incoming;
+    if (old < 0) { index = 0; show(); }
+    else { index = (old+1)%articles.length; }
+  } catch (e) {
+    if (!articles.length) el("headline").textContent = "RSS derzeit nicht erreichbar – versuche es erneut …";
+    console.warn("RSS update failed",e);
   }
 }
-$("logo").onerror = () => { $("logo").style.display = "none"; };
-$("logo").onload = () => { $("logo").style.display = "block"; };
-updateClock();
+clock();
 update();
-setInterval(updateClock, 1000);
-setInterval(update, 30000);
+setInterval(clock,1000);
+setInterval(update,30000);
 </script>
 </body>
 </html>
