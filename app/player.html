@@ -15,6 +15,9 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 #logo { display: none; max-width: 4.8vw; max-height: 6vh; object-fit: contain; }
 /* sample customer's wide group logo needs a white strip on the orange header */
 .wide-logo #logo { max-width: min(63vw, 1150px); max-height: 9vh; background: #fff; padding: .65vh 1vw; object-fit: contain; }
+.wide-logo header { min-height: 12vh; }
+.themed-footer footer { color: var(--ink); border-top-color: transparent; }
+.themed-header #date { color: var(--ink); }
 .wide-logo #brand { display: none; }
 .wide-logo .identity { min-width: 0; }
 @media (max-width: 820px) and (orientation: portrait) {
@@ -135,6 +138,8 @@ function applySettings(data) {
   for (const [key, setting] of [["--header-bg", data.header_color], ["--footer-bg", data.footer_color]]) {
     document.documentElement.style.setProperty(key, /^#[0-9a-fA-F]{6}$/.test(setting || "") ? setting : "transparent");
   }
+  document.body.classList.toggle("themed-header", /^#[0-9a-fA-F]{6}$/.test(data.header_color || ""));
+  document.body.classList.toggle("themed-footer", /^#[0-9a-fA-F]{6}$/.test(data.footer_color || ""));
   const logo = $("logo");
   const logoUrl = data.logo_url || "";
   if (logo.dataset.url !== logoUrl) {
