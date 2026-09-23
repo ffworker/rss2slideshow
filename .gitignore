@@ -13,3 +13,7 @@ assets/*
 
 # personal/company feed choices stay on the docker host
 content/feeds.txt
+
+# local customer files: don't commit names, logos or licensed fonts
+branding/*
+!branding/brand.example.yaml
