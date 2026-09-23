@@ -1,14 +1,15 @@
-# PUBLIC DEMO: this customer allowed us to show its brand as an example.
-# This is only the appearance of /demo/logserv; the RSS feeds remain in content/feeds.txt.
-# From supplied Logserv / group palette: Reinorange #ec6608, Verkehrsgelb #ffdd00.
+# Public demo approved by the customer. /demo/logserv only.
+# One kiosk, one feed list. Only the LOOK changes in the demo.
 brand_name: "Bistro Connect"
-accent_color: "#242424"       # black is readable against the bright yellow news area
-header_color: "#ec6608"       # group orange / the darker yellow requested for the header
+tagline: "meet · eat · chill"
+layout: bistro
+font_family: Calibri     # fallback: Carlito / Arial; no proprietary font in git
+accent_color: "#ec6608"
+header_color: "#fff9ef" # light header with an orange edge, not one huge orange block
 footer_color: "#ec6608"
-background_color: "#ffdd00"   # lighter yellow behind news
-text_color: "#171717"
-font_family: Calibri
-logo_mode: wide              # whole company group's horizontal logo, not the bistro logo
-# Calibri is not bundled: if absent on the kiosk browser, Carlito/Arial is used.
-# For exact font rendering, add a properly licensed font.woff2 to this demo profile.
-# "guten Appetit" text overlay is intentionally not part of this first colors/font/logo demo.
+background_color: "#fff7d9" # lighter yellow is calmer on a big TV
+text_color: "#202020"
+logo_mode: normal
+# logo.png = Bistro Connect icon (primary)
+# group-logo.png = the group mark; optional/small and hidden if the TV is too small
+# no "guten Appetit" overlay in the first branding round
