@@ -17,6 +17,7 @@ import yaml
 from flask import Flask, jsonify, send_from_directory
 from zoneinfo import ZoneInfo
 
+from app.branding import read_brand
 from app.feeds import get_feeds, mix_feeds
 
 ROOT = Path("/app") if Path("/app/config.yaml").is_file() else Path(__file__).resolve().parents[1]
@@ -156,6 +157,17 @@ def kiosk():
     return send_from_directory(Path(__file__).parent, "player.html", mimetype="text/html")
 
 
+@app.get("/branding/<filename>")
+def brand_asset(filename):
+    if filename not in ("logo.png", "font.woff2"):
+        return "", 404
+    folder = ROOT / "branding"
+    if not (folder / filename).is_file():
+        return "", 404
+    media_type = "image/png" if filename == "logo.png" else "font/woff2"
+    return send_from_directory(folder, filename, mimetype=media_type, conditional=True)
+
+
 @app.get("/assets/logo.png")
 def logo():
     path = ROOT / "assets" / "logo.png"
@@ -175,8 +187,7 @@ def articles():
     current.update({
         "timezone": DISPLAY_TZ,
         "server_time_ms": int(time.time() * 1000),
-        "brand_name": BRAND,
-        "accent_color": ACCENT,
+        **read_brand(ROOT, CFG),
         "slide_seconds": SLIDE_SECONDS,
     })
     return jsonify(current)
