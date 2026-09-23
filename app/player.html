@@ -5,14 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RSS kiosk</title>
 <style>
-:root { --accent: #8b3932; --paper: #f8f7f3; --ink: #242424; --muted: #66645e; --line: #cbc8c0; --body-font: Arial, Helvetica, sans-serif; --heading-font: Georgia, serif; }
+:root { --accent: #8b3932; --paper: #f8f7f3; --ink: #242424; --muted: #66645e; --line: #cbc8c0; --body-font: Arial, Helvetica, sans-serif; --heading-font: Georgia, serif; --header-bg: transparent; --footer-bg: transparent; }
 * { box-sizing: border-box; }
 html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 body { background: var(--paper); color: var(--ink); font-family: var(--body-font); }
 #page { height: 100dvh; width: 100vw; padding: 3.5vh 4.5vw 2.5vh; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 0; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 2vw; padding-bottom: 2.2vh; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 2vw; margin: -3.5vh -4.5vw 0; padding: 3.5vh 4.5vw 2.2vh; background: var(--header-bg); }
 .identity { display: flex; align-items: center; min-width: 0; gap: 1.2vw; }
 #logo { display: none; max-width: 4.8vw; max-height: 6vh; object-fit: contain; }
+/* sample customer's wide group logo needs a white strip on the orange header */
+.wide-logo #logo { max-width: min(63vw, 1150px); max-height: 9vh; background: #fff; padding: .65vh 1vw; object-fit: contain; }
+.wide-logo #brand { display: none; }
+.wide-logo .identity { min-width: 0; }
+@media (max-width: 820px) and (orientation: portrait) {
+  .wide-logo #logo { max-width: 62vw; max-height: 7vh; }
+}
 #brand { font-size: clamp(1.4rem,2.6vw,3.5rem); font-weight: 800; letter-spacing: -.035em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .clock { min-width: max-content; text-align: right; font-variant-numeric: tabular-nums; }
 #time { display: block; font-size: clamp(1.15rem,1.85vw,2.4rem); font-weight: 700; }
@@ -32,7 +39,7 @@ h1 { font-family: var(--heading-font); font-size: clamp(2rem,3.55vw,5.1rem); lin
 #story.no-picture .photo { display: none; }
 #story.no-picture .copy { max-width: 85%; }
 #story.no-picture h1 { font-size: clamp(2.3rem,4.5vw,6.1rem); -webkit-line-clamp: 5; }
-footer { border-top: 1px solid var(--line); padding-top: 1.6vh; display: flex; justify-content: space-between; gap: 2vw; align-items: center; color: var(--muted); font-size: clamp(.8rem,1vw,1.3rem); margin-top: 2.5vh; }
+footer { border-top: 1px solid var(--line); padding: 1.6vh 4.5vw 2.5vh; margin: 2.5vh -4.5vw -2.5vh; background: var(--footer-bg); display: flex; justify-content: space-between; gap: 2vw; align-items: center; color: var(--muted); font-size: clamp(.8rem,1vw,1.3rem); margin-top: 2.5vh; }
 #counter { font-variant-numeric: tabular-nums; }
 #empty { grid-column: 1 / -1; align-self: center; justify-self: center; color: var(--muted); font-size: clamp(1.1rem,2vw,2rem); text-align: center; }
 @media (max-width: 820px) and (orientation: portrait) {
@@ -66,6 +73,7 @@ const $ = id => document.getElementById(id);
 let queue = [], position = 0, currentId = "", duration = 20000, timer = null;
 let timezone = "Europe/Berlin", serverTime = null, syncedAt = 0;
 let brand = "RSS reader", activeFontUrl = "";
+const demoProfile = /^\/demo\/[a-z0-9-]{1,40}$/.test(location.pathname) ? location.pathname.split("/").pop() : "";
 const clockDate = () => serverTime === null ? new Date() : new Date(serverTime + performance.now() - syncedAt);
 
 function updateClock() {
@@ -124,6 +132,9 @@ function applySettings(data) {
       document.documentElement.style.setProperty(key, setting);
     }
   }
+  for (const [key, setting] of [["--header-bg", data.header_color], ["--footer-bg", data.footer_color]]) {
+    document.documentElement.style.setProperty(key, /^#[0-9a-fA-F]{6}$/.test(setting || "") ? setting : "transparent");
+  }
   const logo = $("logo");
   const logoUrl = data.logo_url || "";
   if (logo.dataset.url !== logoUrl) {
@@ -132,12 +143,14 @@ function applySettings(data) {
     if (logoUrl) logo.src = logoUrl;
     else logo.removeAttribute("src");
   }
+  document.body.classList.toggle("wide-logo", data.logo_mode === "wide");
   const name = data.font_family || "news";
   const presets = {
     news: ["Arial, Helvetica, sans-serif", "Georgia, serif"],
     sans: ["Arial, Helvetica, sans-serif", "Arial, Helvetica, sans-serif"],
     serif: ["Georgia, serif", "Georgia, serif"],
-    mono: ['"Courier New", monospace', '"Courier New", monospace']
+    mono: ['"Courier New", monospace', '"Courier New", monospace'],
+    Calibri: ['"Calibri", "Carlito", Arial, sans-serif', '"Calibri", "Carlito", Arial, sans-serif']
   };
   const fonts = presets[name] || [JSON.stringify(name) + ", Arial, sans-serif", JSON.stringify(name) + ", Arial, sans-serif"];
   const setFonts = (body, headline) => {
@@ -172,7 +185,7 @@ function applySettings(data) {
 
 async function update() {
   try {
-    const response = await fetch("/api/articles", { cache: "no-store" });
+    const response = await fetch("/api/articles" + (demoProfile ? "?demo=" + encodeURIComponent(demoProfile) : ""), { cache: "no-store" });
     if (!response.ok) throw Error("HTTP " + response.status);
     const data = await response.json();
     applySettings(data);
