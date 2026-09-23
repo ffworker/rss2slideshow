@@ -169,12 +169,12 @@ def demo(profile):
 
 @app.get("/branding/examples/<profile>/<filename>")
 def demo_asset(profile, filename):
-    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile) or filename not in ("logo.png", "font.woff2"):
+    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile) or filename not in ("logo.png", "group-logo.png", "font.woff2"):
         abort(404)
     folder = ROOT / "branding" / "examples" / profile
     if not (folder / "brand.yaml").is_file() or not (folder / filename).is_file():
         abort(404)
-    return send_from_directory(folder, filename, mimetype="image/png" if filename == "logo.png" else "font/woff2", conditional=True)
+    return send_from_directory(folder, filename, mimetype="image/png" if filename.endswith(".png") else "font/woff2", conditional=True)
 
 
 @app.get("/branding/<filename>")
