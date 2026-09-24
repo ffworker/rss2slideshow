@@ -90,7 +90,12 @@ def read_brand(root, fallback=None, profile=None):
         except (OSError, ValueError, yaml.YAMLError):
             LOG.exception("could not read branding/brand.yaml, keeping default look")
 
-    settings["logo_url"] = _file_url(folder, "logo.png", prefix)
+    # Prefer the supplied vector mark. PNG remains a fallback for older customer installs.
+    settings["logo_url"] = (
+        _file_url(folder, "logo.svg", prefix)
+        or _file_url(folder, "logo.svgz", prefix)
+        or _file_url(folder, "logo.png", prefix)
+    )
     settings["group_logo_url"] = (_file_url(folder, "claim-logo.png", prefix)
                                    or _file_url(folder, "group-logo.png", prefix))
     settings["footer_banner_url"] = _file_url(folder, "footer-banner.png", prefix)
