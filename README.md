@@ -92,7 +92,8 @@ palette from their supplied file is orange #ec6608 and yellow #ffdd00, but cover
 files for the approved public example:
 
 - `branding/examples/logserv/brand.yaml` – name/colors/font/layout, can tweak that
-- `branding/examples/logserv/logo.png` – little Bistro Connect round logo, primary
+- `branding/examples/logserv/logo.svgz` – actual customer vector logo from their EPS, tightly cropped so no big white/empty square around it. its just gzip-compressed SVG, the browser gets it as an SVG image.
+- `branding/examples/logserv/logo.png` – old pixel logo, still there as fallback
 - `branding/examples/logserv/claim-logo.png` – Friedrich Friedrich logo with claim, top right when it fits
 - `branding/examples/logserv/footer-banner.png` – the names of the group companies, centered in the footer
 - `branding/examples/logserv/group-logo.png` – the previous group strip kept for comparison, not used in the header now
@@ -100,6 +101,8 @@ files for the approved public example:
 `http://YOUR_DOCKER_HOST:8085/demo/logserv` is the sample preview. `/` stays my existing normal kiosk. both read the same `content/feeds.txt` for now; demo isn't a second account or some multi-tenant mess. actual customer's files are public here because they explicitly allowed this example, not because we're going to put everyone else's logos in git.
 
 layout is one article at a time, no clickable controls, and uses available space rather than fixed FHD pixel coordinates. at 1280×720 it should show the Bistro identity, clock, one picture and readable article text without cramming in the header claim; at 1920×1080 it has room for more. gotta verify both on the actual kiosk/browser, not just assume it's perfect from CSS.
+
+new logo note: `logo.svg` is the easy option for future customers with an SVG already. for this Bistro EPS i converted it to SVG paths and compressed it as `logo.svgz` since it's a bit smaller to serve. the customer-provided EPS itself isn't needed on the Docker host and isn't served to browsers. after pulling the new code, the demo chooses the vector automatically over `logo.png`. no feeds or other customer configs were changed.
 
 the 'Friedrich Friedrich wünscht guten Appetit' idea can go in later if they still want it, not cluttering this first version.
 
