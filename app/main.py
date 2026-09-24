@@ -167,25 +167,41 @@ def demo(profile):
     return send_from_directory(Path(__file__).parent, "player.html", mimetype="text/html")
 
 
+def serve_brand_file(folder, filename):
+    # Browsers decompress logo.svgz as HTTP gzip, then render its vector paths.
+    media_type = ("image/svg+xml" if filename in ("logo.svg", "logo.svgz") else
+                  "image/png" if filename.endswith(".png") else "font/woff2")
+    response = send_from_directory(folder, filename, mimetype=media_type, conditional=True)
+    if filename == "logo.svgz":
+        response.headers["Content-Encoding"] = "gzip"
+    if filename in ("logo.svg", "logo.svgz"):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    return response
+
+
 @app.get("/branding/examples/<profile>/<filename>")
 def demo_asset(profile, filename):
-    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile) or filename not in ("logo.png", "group-logo.png", "claim-logo.png", "footer-banner.png", "font.woff2"):
+    allowed = ("logo.png", "logo.svg", "logo.svgz", "group-logo.png",
+               "claim-logo.png", "footer-banner.png", "font.woff2")
+    if not re.fullmatch(r"[a-z0-9-]{1,40}", profile) or filename not in allowed:
         abort(404)
     folder = ROOT / "branding" / "examples" / profile
     if not (folder / "brand.yaml").is_file() or not (folder / filename).is_file():
         abort(404)
-    return send_from_directory(folder, filename, mimetype="image/png" if filename.endswith(".png") else "font/woff2", conditional=True)
+    return serve_brand_file(folder, filename)
 
 
 @app.get("/branding/<filename>")
 def brand_asset(filename):
-    if filename not in ("logo.png", "group-logo.png", "claim-logo.png", "footer-banner.png", "font.woff2"):
-        return "", 404
+    allowed = ("logo.png", "logo.svg", "logo.svgz", "group-logo.png",
+               "claim-logo.png", "footer-banner.png", "font.woff2")
+    if filename not in allowed:
+        abort(404)
     folder = ROOT / "branding"
     if not (folder / filename).is_file():
-        return "", 404
-    media_type = "image/png" if filename.endswith(".png") else "font/woff2"
-    return send_from_directory(folder, filename, mimetype=media_type, conditional=True)
+        abort(404)
+    return serve_brand_file(folder, filename)
 
 
 @app.get("/assets/logo.png")
