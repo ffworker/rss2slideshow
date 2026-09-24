@@ -1,3 +1,4 @@
+import gzip
 import tempfile
 import unittest
 from pathlib import Path
@@ -103,6 +104,12 @@ class CustomerBrandTests(unittest.TestCase):
         self.assertEqual(group.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
         self.assertEqual(claim.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
         self.assertEqual(footer_banner.read_bytes()[:8], bytes((137, 80, 78, 71, 13, 10, 26, 10)))
+        svgz = demo / "logo.svgz"
+        self.assertTrue(svgz.is_file(), "the public Bistro demo needs its new vector logo")
+        vector = gzip.decompress(svgz.read_bytes()).decode("utf-8")
+        self.assertIn("<svg", vector)
+        self.assertIn('viewBox="296 107 542 542"', vector)
+        self.assertIn("<path", vector)
         brand = read_brand(root, profile="logserv")
         self.assertEqual(brand["brand_name"], "Bistro Connect")
         self.assertEqual(brand["layout"], "bistro")
@@ -114,10 +121,15 @@ class CustomerBrandTests(unittest.TestCase):
         self.assertEqual(brand["background_color"], "#fff8cf")
         self.assertEqual(brand["font_family"], "Calibri")
         self.assertEqual(brand["footer_names"], ["Logserv", "Friedrich Friedrich", "Höhne-Grass", "J. & G. Adrian", "KS Büromöbel"])
-        self.assertTrue(brand["logo_url"].startswith("/branding/examples/logserv/logo.png?v="))
+        self.assertTrue(brand["logo_url"].startswith("/branding/examples/logserv/logo.svgz?v="))
         self.assertTrue(brand["group_logo_url"].startswith("/branding/examples/logserv/claim-logo.png?v="))
         self.assertTrue(brand["footer_banner_url"].startswith("/branding/examples/logserv/footer-banner.png?v="))
         with main.app.test_client() as client:
+            logo_response = client.get("/branding/examples/logserv/logo.svgz")
+            self.assertEqual(logo_response.status_code, 200)
+            self.assertEqual(logo_response.mimetype, "image/svg+xml")
+            self.assertEqual(logo_response.headers["Content-Encoding"], "gzip")
+            self.assertIn(b"<svg", gzip.decompress(logo_response.data))
             self.assertEqual(client.get("/branding/examples/logserv/group-logo.png").status_code, 200)
             self.assertEqual(client.get("/branding/examples/logserv/claim-logo.png").status_code, 200)
             self.assertEqual(client.get("/branding/examples/logserv/footer-banner.png").status_code, 200)
