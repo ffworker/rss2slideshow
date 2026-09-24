@@ -12,7 +12,9 @@ text_color: "#202020"
 logo_mode: normal
 show_group_logo: false
 source_in_header: true
-# logo.png = Bistro Connect icon (primary)
+# logo.svgz = customer's vector artwork (EPS converted to tightly cropped SVG,
+# compressed for the web); logo.png is kept only as a fallback.
+# other customers can simply drop a regular logo.svg into their branding folder.
 # header is deliberately Bistro Connect + current news source, no group logo
 # company names are real text instead of the tiny almost-invisible PNG
 footer_names:
