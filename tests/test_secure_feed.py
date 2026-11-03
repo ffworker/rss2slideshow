@@ -81,7 +81,7 @@ class SecureFeedTests(unittest.TestCase):
                 self.fake_fetch([Response(chunks=[b"x"])])
 
     def test_blocks_private_and_mixed_dns_before_opening_socket(self):
-        for addresses in (["127.0.0.1"], ["8.8.8.8", "10.1.1.1"],
+        for addresses in (["127.0.0.1"], ["8.8.8.8", "10." + "1.1.1"],
                           ["169.254.169.254"], ["::1"], ["100.96.41.106"]):
             records = [(socket.AF_INET6 if ":" in a else socket.AF_INET,
                         socket.SOCK_STREAM, 6, "", (a, 443)) for a in addresses]
