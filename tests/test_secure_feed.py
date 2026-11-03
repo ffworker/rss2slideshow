@@ -1,6 +1,8 @@
-"""Network hardening regression tests. All downloads and sockets are mocked."""
+"""Network hardening regression tests, including a local HTTP integration check."""
 import socket
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest.mock import MagicMock, patch
 
 from urllib3.exceptions import NewConnectionError
@@ -92,6 +94,54 @@ class SecureFeedTests(unittest.TestCase):
                 with self.assertRaises(NewConnectionError):
                     conn._new_conn()
                 connect.assert_not_called()
+
+    def test_real_http_fetch_uses_custom_pool_and_keeps_host_header(self):
+        seen_hosts = []
+        payload = b"<rss><channel><title>Test</title></channel></rss>"
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                seen_hosts.append(self.headers.get("Host"))
+                self.send_response(200)
+                self.send_header("Content-Type", "application/rss+xml")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def log_message(self, *args):
+                pass
+
+        server = HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        # A fake public DNS answer is used at validation; the test's connector
+        # dials the local test server instead. No real Internet is accessed.
+        answers = [(socket.AF_INET, socket.SOCK_STREAM, 6, "",
+                    ("8.8.8.8", server.server_port))]
+        attempted = []
+
+        def dial(address, timeout=None, source_address=None, socket_options=None):
+            attempted.append(address)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3)
+            sock.connect(("127.0.0.1", server.server_port))
+            return sock
+
+        try:
+            with patch.object(secure_feed.socket, "getaddrinfo", return_value=answers), \
+                 patch.object(secure_feed.urllib3_connection.connection,
+                              "create_connection", side_effect=dial):
+                result = secure_feed.fetch_feed_bytes(
+                    f"http://feed.example:{server.server_port}/rss"
+                )
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+        self.assertEqual(result, payload)
+        self.assertEqual(attempted, [("8.8.8.8", server.server_port)])
+        self.assertEqual(seen_hosts, [f"feed.example:{server.server_port}"])
 
     def test_connects_to_vetted_numeric_ip_but_retains_tls_hostname(self):
         records = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443))]
