@@ -1,0 +1,6 @@
+# Copy to untracked config.yaml. /admin settings under content/ have priority.
+# Feeds: content/feeds.txt; optional installation branding: branding/brand.yaml.
+max_articles: 5
+refresh_minutes: 10
+# Check image use rights before enabling feed images.
+news_images: false

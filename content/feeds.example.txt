@@ -1,0 +1,3 @@
+# Example feed list: replace this placeholder with your own working RSS URL.
+# Format: Name | https://provider.example/rss.xml
+Example Feed | https://example.org/news.xml

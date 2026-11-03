@@ -1,0 +1,26 @@
+services:
+  signage:
+    build: .
+    restart: unless-stopped
+    environment:
+      TZ: ${DISPLAY_TZ:-Europe/Berlin}
+      DISPLAY_TZ: ${DISPLAY_TZ:-Europe/Berlin}
+      SLIDE_SECONDS: ${SLIDE_SECONDS:-20}
+      ADMIN_USER: ${ADMIN_USER:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_KIOSK_PATH: ${ADMIN_KIOSK_PATH:-/}
+      BINARY_EMOTIONS_ADDON: ${BINARY_EMOTIONS_ADDON:-false}
+      BINARY_EMOTIONS_LIMIT: ${BINARY_EMOTIONS_LIMIT:-10}
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${HTTP_PORT:-8085}:8080"
+    volumes:
+      # Reject a missing config.yaml instead of creating a directory at this path.
+      - type: bind
+        source: ./config.yaml
+        target: /app/config.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+      - ./content:/app/content
+      - ./assets:/app/assets:ro
+      - ./branding:/app/branding:ro

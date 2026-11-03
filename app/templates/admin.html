@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RSS2Slideshow – Einstellungen</title>
+<style>
+
+:root{font-family:Arial,Helvetica,sans-serif;color:#1f2937;background:#f8fafc;--accent-ui:#2563eb;--ink:#1f2937;--muted:#64748b;--line:#e2e8f0}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:linear-gradient(180deg,#fff9df 0,#f7f5ef 190px)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #e9894f;outline-offset:2px}
+.wrap{width:min(1640px,calc(100% - 40px));margin:0 auto;padding:24px 0 50px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+.top h1{font-size:clamp(23px,2.5vw,34px);letter-spacing:-.04em;line-height:1.15;margin:0 0 4px}
+.muted{font-size:12px;line-height:1.5;color:var(--muted)}
+a.button,button{display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:9px;padding:10px 14px;background:#262823;color:#fff;text-decoration:none;font-size:13px;font-weight:700;line-height:1.25;transition:box-shadow .15s,background .15s}
+a.button:hover,button:hover{box-shadow:0 3px 11px rgba(30,23,14,.12)}
+button.primary{background:var(--accent-ui)}
+button.primary:hover{background:#bd4d08}
+button.secondary,a.secondary{background:#fff;color:var(--ink);border-color:#d3cfc5}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:21px;box-shadow:0 3px 16px rgba(48,38,20,.045)}
+.notice{border-radius:9px;padding:12px 15px;margin:12px 0;font-size:13px;font-weight:700}
+.ok{background:#e9f6ea;color:#245c2b;border:1px solid #b9ddbd}
+.err{background:#fdeae6;color:#8c2c1c;border:1px solid #e9b7ae}
+.eyebrow{display:block;color:#cf5311;font-size:10px;font-weight:800;letter-spacing:.12em;margin-bottom:5px}
+.studio-card{padding:0;overflow:hidden}
+.studio-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 24px 18px}
+.studio-heading h2{font-size:25px;letter-spacing:-.035em;margin:0 0 4px}
+.studio-subtitle{font-size:13px;color:var(--muted);line-height:1.5;margin:0}
+.studio-heading-actions{display:flex;align-items:center;gap:11px;flex:none}
+.draft-status{font-size:11px;font-weight:700;color:#426d4b;background:#eaf4ed;border:1px solid #c9e6d0;border-radius:30px;padding:7px 11px;white-space:nowrap}
+.draft-status.is-dirty{background:#fff2df;color:#91501a;border-color:#f1d0a6}
+.design-controls{margin:0 15px 14px;background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.tool-tabs{display:flex;gap:5px;flex-wrap:wrap;padding:7px;background:#f6f3eb}
+.tool-tab{flex:1 1 143px;min-height:40px;background:transparent;color:#5e5d55;border:1px solid transparent;padding:9px 10px;box-shadow:none;border-radius:8px}
+.tool-tab:hover{background:#ebe6db;box-shadow:none}
+.tool-tab.active{background:#fff;color:#bf4e0c;border-color:#edd8c6;box-shadow:0 2px 7px rgba(66,48,25,.06)}
+.tool-panel{padding:16px 18px 18px;min-height:138px}
+.design-group h3{font-size:14px;margin:0 0 12px}
+.design-field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+.design-field input[type=text],.design-field input[type=number],.design-field select,.design-field textarea,.design-field input[type=file]{width:100%;border:1px solid #d3cfc6;border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink);font-size:13px;min-height:38px}
+.design-field textarea{min-height:94px;resize:vertical;line-height:1.45}
+.design-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;align-items:end}
+.design-field>.muted{margin-top:5px}
+.color-row{display:flex;align-items:center;gap:8px;min-height:38px}
+.color-row input[type=color]{width:42px;height:37px;padding:3px;border:1px solid #d3cfc6;border-radius:8px;cursor:pointer;background:#fff;flex:none}
+.color-row .muted{font-size:11px}
+#design-panel-brand .design-group>.design-field:first-of-type{max-width:480px;margin-bottom:12px}
+#design-panel-type .design-group>.design-field:first-of-type{max-width:420px}
+#design-panel-layout .design-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 18px}
+#design-panel-layout .design-group h3{grid-column:1/-1;margin-bottom:0}
+#design-panel-layout .design-field{margin:0!important}
+.range-row{display:grid;grid-template-columns:minmax(60px,1fr) 62px 44px;align-items:center;gap:7px}
+.range-row input[type=range]{width:100%;min-width:0;accent-color:var(--accent-ui)}
+.range-row input[type=number]{min-height:34px;height:34px;padding:5px;text-align:center}
+.range-value{text-align:right;font-size:12px;font-weight:700;color:#6f695f;font-variant-numeric:tabular-nums}
+.design-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.toggle-tile{display:flex!important;align-items:center;gap:10px;border:1px solid #dfdbd2;background:#faf9f5;border-radius:10px;padding:12px;margin:0;cursor:pointer}
+.toggle-tile:has(input:checked){background:#fff6ed;border-color:#efc4a5}
+.toggle-tile input[type=checkbox]{width:19px;height:19px;flex:none;accent-color:var(--accent-ui);cursor:pointer}
+.toggle-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.toggle-copy strong{font-size:12px}
+.toggle-copy small{font-size:11px;color:var(--muted);line-height:1.3}
+.footer-editor{margin-top:13px;max-width:860px}
+#design-panel-logo .design-field{max-width:580px}
+.preview-shell{background:#222321;padding:14px 15px 16px;border-radius:0 0 14px 14px}
+.preview-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#fff;margin:0 2px 11px}
+.preview-caption{display:flex;align-items:baseline;gap:13px;flex-wrap:wrap}
+.preview-caption strong{font-size:14px}
+.preview-caption span{font-size:12px;color:#c8c7c1}
+a.preview-open{background:#fff;color:#282923;border-color:#fff;padding:8px 12px;font-size:12px}
+.preview-frame{display:block;width:100%;aspect-ratio:16/9;border:0;background:#fff;border-radius:7px}
+.preview-footnote{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:13px 2px 0}
+.preview-footnote span{color:#d6d4cb;font-size:12px;line-height:1.5;max-width:900px}
+.preview-footnote strong{color:#fff}
+.reset-action{flex:none;padding:8px 10px;font-size:12px}
+.preview-footnote-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;flex:none}
+.operations-heading{margin:27px 4px 13px}
+.operations-heading h2{margin:0 0 4px;font-size:22px;letter-spacing:-.025em}
+.operations-heading p{margin:0;font-size:13px;color:var(--muted)}
+.operations-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:15px;align-items:start}
+.operations-grid .card{padding:20px}
+.section-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.section-heading h3{font-size:17px;letter-spacing:-.015em;margin:0 0 3px}
+.section-heading p{font-size:12px;color:var(--muted);margin:0}
+.counter-tag{background:#fff3e2;color:#9b4a14;font-size:11px;font-weight:700;border-radius:30px;padding:6px 10px}
+.feed-hint{font-size:11px;color:var(--muted);margin:0 0 8px}
+.feed-row{display:grid;grid-template-columns:minmax(105px,.7fr) minmax(0,1.8fr) auto;gap:7px;margin:7px 0}
+.feed-row input,.field input{width:100%;min-width:0;min-height:39px;border:1px solid #d4d0c7;border-radius:8px;padding:8px 10px;font-size:13px;background:#fff}
+.delete{border:1px solid #eac8bb;background:#fff8f4;color:#9c3c21;padding:8px 10px}
+.feed-add{margin-top:9px}
+.actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:14px}
+.settings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+.field .muted{margin-top:4px}
+.display-image-toggle{margin-top:15px}
+.status-card{margin-top:15px;padding:18px 20px}
+.status-card .section-heading{margin-bottom:9px}
+.status{display:flex;flex-wrap:wrap;gap:9px}
+.stat{min-width:127px;background:#faf9f5;border:1px solid #eee9df;border-radius:9px;padding:10px 13px}
+.stat strong{display:block;font-size:21px;margin-bottom:1px}
+.status-card .actions{margin-top:10px}
+.results{margin-top:12px}
+.result{border-top:1px solid #eee8db;padding:9px 0;font-size:12px}
+.result b.good{color:#267034}
+.result b.bad{color:#a33a27}
+footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
+@media(max-width:1050px){.operations-grid{grid-template-columns:1fr}#design-panel-layout .design-group{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.wrap{width:calc(100% - 22px);padding-top:14px}.studio-heading{flex-wrap:wrap;padding:18px 15px}.studio-heading-actions{width:100%;justify-content:space-between}.design-controls{margin:0 9px 9px}.tool-panel{padding:14px 12px}.design-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-checks{grid-template-columns:1fr}.preview-shell{padding:10px}.preview-footnote{flex-wrap:wrap;align-items:flex-start}}
+@media(max-width:520px){.top{flex-wrap:wrap}.tool-tab{flex:1 1 125px}#design-panel-layout .design-group,.design-grid,.settings{grid-template-columns:1fr}.feed-row{grid-template-columns:1fr auto}.feed-row input[name=feed_label]{grid-column:1/-1}.preview-caption{gap:4px}.stat{min-width:98px}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>RSS2Slideshow – Einstellungen</h1><div class="muted">Nur die Dinge, die im Alltag wirklich gebraucht werden.</div></div>
+    <a class="button secondary" href="{{ kiosk_path }}" target="_blank" rel="noopener">Kiosk öffnen</a>
+  </div>
+
+  {% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+  {% if error %}<div class="notice err">{{ error }}</div>{% endif %}
+
+  <form method="post" autocomplete="off" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+
+    <section class="card studio-card" id="design-editor">
+      <div class="studio-heading">
+        <div><span class="eyebrow">GESTALTUNG</span><h2>Design-Studio</h2><p class="studio-subtitle">Schriften, Farben und Aufbau anpassen – veröffentlicht wird erst beim Speichern.</p></div>
+        <div class="studio-heading-actions"><span id="design-draft-status" class="draft-status" role="status" aria-live="polite">Gespeicherter Stand</span><button class="primary" type="submit" name="action" value="save_design">Design speichern</button></div>
+      </div>
+      <div class="design-controls" id="design-controls">
+        <div class="tool-tabs" role="tablist" aria-label="Design-Werkzeuge">
+          <button id="design-tab-type" class="tool-tab active" type="button" role="tab" data-design-tab="type" aria-controls="design-panel-type" aria-selected="true" tabindex="0">Schrift & Farben</button>
+          <button id="design-tab-layout" class="tool-tab" type="button" role="tab" data-design-tab="layout" aria-controls="design-panel-layout" aria-selected="false" tabindex="-1">Layout & Größen</button>
+          <button id="design-tab-brand" class="tool-tab" type="button" role="tab" data-design-tab="brand" aria-controls="design-panel-brand" aria-selected="false" tabindex="-1">Marke & Flächen</button>
+          <button id="design-tab-chrome" class="tool-tab" type="button" role="tab" data-design-tab="chrome" aria-controls="design-panel-chrome" aria-selected="false" tabindex="-1">Kopf & Fußzeile</button>
+          <button id="design-tab-logo" class="tool-tab" type="button" role="tab" data-design-tab="logo" aria-controls="design-panel-logo" aria-selected="false" tabindex="-1">Logo</button>
+        </div>
+        <div id="design-panel-type" class="tool-panel" role="tabpanel" aria-labelledby="design-tab-type" tabindex="0">
+          <div class="design-group">
+            <h3>Schrift & Textfarben</h3>
+            <div class="design-field">
+              <label for="design_font_family">Schriftart (Überschrift & Beschreibung)</label>
+              <select id="design_font_family" name="design_font_family">
+                {% for value, label in [
+                  ('Calibri','Calibri / Carlito (Firmenstil)'),
+                  ('Arial','Arial'),('Verdana','Verdana'),
+                  ('sans','Sans Serif'),('serif','Serif'),('mono','Monospace'),
+                  ('news','Nachrichtenstil (Arial + Georgia)')
+                ] %}
+                <option value="{{ value }}" {% if design.font_family == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="design-grid" style="margin-top:10px">
+              <div class="design-field"><label for="design_headline_color">Überschrift (neben Bild)</label><div class="color-row"><input id="design_headline_color" name="design_headline_color" type="color" value="{{ design.headline_color }}"><span class="muted">z. B. Firmenorange</span></div></div>
+              <div class="design-field"><label for="design_summary_color">Beschreibung (neben Bild)</label><div class="color-row"><input id="design_summary_color" name="design_summary_color" type="color" value="{{ design.summary_color }}"><span class="muted">Normaler Artikeltext</span></div></div>
+              <div class="design-field"><label for="design_overlay_headline_color">Überschrift auf Bild</label><div class="color-row"><input id="design_overlay_headline_color" name="design_overlay_headline_color" type="color" value="{{ design.overlay_headline_color }}"><span class="muted">Auch Orange möglich</span></div></div>
+              <div class="design-field"><label for="design_overlay_summary_color">Beschreibung auf Bild</label><div class="color-row"><input id="design_overlay_summary_color" name="design_overlay_summary_color" type="color" value="{{ design.overlay_summary_color }}"><span class="muted">Für gute Lesbarkeit</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div id="design-panel-layout" class="tool-panel" role="tabpanel" aria-labelledby="design-tab-layout" tabindex="0" hidden>
+          <div class="design-group">
+            <h3>Layout & Größen</h3>
+            {% set ranges = [
+              ('design_header_height','Header-Höhe',80,220,design.header_height,'px'),
+              ('design_footer_height','Footer-Höhe',45,130,design.footer_height,'px'),
+              ('design_logo_size','Logo-Größe',50,170,design.logo_size,'px'),
+              ('design_image_width','Bildbreite',30,70,design.image_width,'%'),
+              ('design_headline_size','Überschrift',20,110,design.headline_size,'px'),
+              ('design_summary_size','Beschreibung',12,60,design.summary_size,'px')
+            ] %}
+            {% for id,label,minv,maxv,value,unit in ranges %}
+            <div class="design-field" style="margin-bottom:9px">
+              <label for="{{ id }}">{{ label }}</label>
+              <div class="range-row">
+                <input id="{{ id }}" name="{{ id }}" type="range" min="{{ minv }}" max="{{ maxv }}" value="{{ value }}" data-unit="{{ unit }}">
+                <input id="{{ id }}_number" type="number" min="{{ minv }}" max="{{ maxv }}" value="{{ value }}" aria-label="{{ label }} in {{ unit }}">
+                <span class="range-value" id="{{ id }}_value">{{ value }}{{ unit }}</span>
+              </div>
+            </div>
+            {% endfor %}
+            <div class="design-field">
+              <label for="design_image_fit">Artikelbild</label>
+              <select id="design_image_fit" name="design_image_fit">
+                <option value="contain" {% if design.image_fit == 'contain' %}selected{% endif %}>Ganzes Bild zeigen (contain)</option>
+                <option value="cover" {% if design.image_fit == 'cover' %}selected{% endif %}>Fläche füllen / beschneiden (cover)</option>
+              </select>
+            </div>
+            <div class="design-field" style="margin-top:10px">
+              <label for="design_story_layout">Artikelaufbau</label>
+              <select id="design_story_layout" name="design_story_layout">
+                <option value="split" {% if design.story_layout == 'split' %}selected{% endif %}>Bild neben Text</option>
+                <option value="overlay" {% if design.story_layout == 'overlay' %}selected{% endif %}>Bild vollflächig, Text darüber</option>
+              </select>
+              <div class="muted">Overlay füllt den mittleren Bereich; der Text liegt auf einer lesbaren Fläche über dem Bild.</div>
+            </div>
+          </div>
+        </div>
+        <div id="design-panel-brand" class="tool-panel" role="tabpanel" aria-labelledby="design-tab-brand" tabindex="0" hidden>
+          <div class="design-group">
+            <h3>Markenauftritt</h3>
+            <div class="design-field">
+              <label for="design_brand_name">Anzeigename</label>
+              <input id="design_brand_name" name="design_brand_name" type="text" maxlength="60" value="{{ design.brand_name }}">
+            </div>
+            <div class="design-grid" style="margin-top:10px">
+              <div class="design-field"><label for="design_accent_color">Akzent</label><div class="color-row"><input id="design_accent_color" name="design_accent_color" type="color" value="{{ design.accent_color }}"><span class="muted">Orange / Akzent</span></div></div>
+              <div class="design-field"><label for="design_background_color">Hintergrund</label><div class="color-row"><input id="design_background_color" name="design_background_color" type="color" value="{{ design.background_color }}"><span class="muted">Artikelbereich</span></div></div>
+              <div class="design-field"><label for="design_text_color">Text</label><div class="color-row"><input id="design_text_color" name="design_text_color" type="color" value="{{ design.text_color }}"><span class="muted">Fließtext</span></div></div>
+              <div class="design-field"><label for="design_header_color">Header</label><div class="color-row"><input id="design_header_color" name="design_header_color" type="color" value="{{ design.header_color }}"><span class="muted">Kopfzeile</span></div></div>
+              <div class="design-field"><label for="design_footer_color">Footer</label><div class="color-row"><input id="design_footer_color" name="design_footer_color" type="color" value="{{ design.footer_color }}"><span class="muted">Fußzeile</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div id="design-panel-chrome" class="tool-panel" role="tabpanel" aria-labelledby="design-tab-chrome" tabindex="0" hidden>
+          <div class="design-group">
+            <h3>Elemente ein- und ausblenden</h3>
+            <div class="design-checks">
+              <label class="toggle-tile"><input id="design_show_clock" type="checkbox" name="design_show_clock" {% if design.show_clock %}checked{% endif %}><span class="toggle-copy"><strong>Uhr & Datum</strong><small>Rechts in der Kopfzeile</small></span></label>
+              <label class="toggle-tile"><input id="design_show_source" type="checkbox" name="design_show_source" {% if design.show_source %}checked{% endif %}><span class="toggle-copy"><strong>Nachrichtenquelle</strong><small>Quelle des aktuellen Artikels</small></span></label>
+              <label class="toggle-tile"><input id="design_show_footer_names" type="checkbox" name="design_show_footer_names" {% if design.show_footer_names %}checked{% endif %}><span class="toggle-copy"><strong>Footer-Einträge</strong><small>Optionale Namen im Footer</small></span></label>
+            </div>
+            <div class="design-field footer-editor">
+              <label for="design_footer_names">Namen im Footer – jeweils eine Zeile, max. 6</label>
+              <textarea id="design_footer_names" name="design_footer_names">{{ design.footer_names|join('\n') }}</textarea>
+            </div>
+          </div>
+        </div>
+        <div id="design-panel-logo" class="tool-panel" role="tabpanel" aria-labelledby="design-tab-logo" tabindex="0" hidden>
+          <div class="design-group">
+            <h3>Logo austauschen</h3>
+            <div class="design-field">
+              <label for="design_logo">Optional neues Logo</label>
+              <input id="design_logo" name="design_logo" type="file" accept="image/png,image/jpeg,image/webp">
+              <div class="muted">PNG, JPG oder WebP, max. 3 MB. Leer lassen = aktuelles Logo behalten.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-shell">
+        <div class="preview-bar"><div class="preview-caption"><strong>Grobe Vorschau</strong><span>16:9 – nicht maßstabsgetreu</span></div><a class="button preview-open" href="{{ kiosk_path }}" target="_blank" rel="noopener">Echten Kiosk öffnen ↗</a></div>
+        <iframe id="design-preview" class="preview-frame" src="{{ kiosk_path }}" title="Grobe Kiosk-Designvorschau"></iframe>
+        <div class="preview-footnote">
+          <span>Die Vorschau ist nur eine Orientierung. Design speichern, Kiosk im eigenen Tab mit <strong>Strg+F5</strong> neu laden und den echten Anzeigegerät prüfen.</span>
+          <div class="preview-footnote-actions"><button class="secondary reset-action" type="submit" name="action" value="reset_design" formnovalidate onclick="return confirm('Design wirklich auf den hinterlegten Kundenstandard zurücksetzen?')">Zurücksetzen</button><button class="primary" type="submit" name="action" value="save_design">Design speichern</button></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="operations-heading"><span class="eyebrow">INHALTE & BETRIEB</span><h2>Nachrichten verwalten</h2><p>RSS-Quellen und Anzeige unter der Vorschau bearbeiten.</p></div>
+    <div class="operations-grid">
+    <section class="card feed-card" id="rss-feeds">
+      <div class="section-heading"><div><h3>RSS-Feeds</h3><p>Quellen hinzufügen, testen und speichern.</p></div><span class="counter-tag">{{ feeds|length }} konfiguriert</span></div>
+      <p class="feed-hint">Name optional · Feed-URL erforderlich</p>
+      <div id="feeds">
+        {% for label, url in feeds %}
+        <div class="feed-row">
+          <input aria-label="Feed-Bezeichnung" name="feed_label" maxlength="70" value="{{ label }}" placeholder="Name, z. B. Regional">
+          <input aria-label="Feed-URL" name="feed_url" maxlength="2048" value="{{ url }}" placeholder="https://…/rss.xml" inputmode="url">
+          <button class="delete" type="button" onclick="this.parentElement.remove()">Entfernen</button>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="feed-add">
+        <button class="secondary" type="button" onclick="addFeed()">+ Weitere Quelle</button>
+      </div>
+      {% if feed_tests %}
+      <div class="results">
+        {% for result in feed_tests %}
+        <div class="result"><b class="{{ 'good' if result.ok else 'bad' }}">{{ '✓' if result.ok else '✗' }} {{ result.label }}</b> — {{ result.detail }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="actions">
+        <button class="secondary" type="submit" name="action" value="test_feeds">Feeds testen</button>
+        <button class="primary" type="submit" name="action" value="save_feeds">Feeds speichern</button>
+      </div>
+    </section>
+    <section class="card display-card" id="display-settings">
+      <div class="section-heading"><div><h3>Anzeige</h3><p>Artikelwechsel und Bildmaterial.</p></div></div>
+      <div class="settings">
+        <div class="field">
+          <label for="slide_seconds">Artikel wechseln nach</label>
+          <input id="slide_seconds" name="slide_seconds" type="number" min="5" max="300" value="{{ settings.slide_seconds }}">
+          <div class="muted">Sekunden, 5–300</div>
+        </div>
+        <div class="field">
+          <label for="max_articles">Artikel pro Feed</label>
+          <input id="max_articles" name="max_articles" type="number" min="1" max="30" value="{{ settings.max_articles }}">
+          <div class="muted">1–30</div>
+        </div>
+        <div class="field">
+          <label for="refresh_minutes">Feeds aktualisieren</label>
+          <input id="refresh_minutes" name="refresh_minutes" type="number" min="1" max="1440" value="{{ settings.refresh_minutes }}">
+          <div class="muted">Minuten</div>
+        </div>
+      </div>
+      <label class="toggle-tile display-image-toggle"><input type="checkbox" name="news_images" {% if settings.news_images %}checked{% endif %}><span class="toggle-copy"><strong>RSS-Bilder anzeigen</strong><small>Wenn der Feed Bilder liefert</small></span></label>
+      <div class="actions">
+        <button class="primary" type="submit" name="action" value="save_settings">Anzeige speichern</button>
+      </div>
+    </section>
+    </div>
+    <section class="card status-card" id="rss-status">
+      <div class="section-heading"><div><h3>Status & Aktualisierung</h3><p>Aktuelle Zahlen zur RSS-Ausgabe.</p></div></div>
+      <div class="status">
+        <div class="stat"><strong>{{ feeds|length }}</strong><span>Feeds konfiguriert</span></div>
+        <div class="stat"><strong>{{ status.articles }}</strong><span>Artikel geladen</span></div>
+        <div class="stat"><strong>{{ status.sources }}</strong><span>Quellen im letzten Lauf</span></div>
+      </div>
+      <p class="muted">Letztes Update: <span id="updated">{{ status.updated_at or 'noch nicht' }}</span></p>
+      <div class="actions">
+        <button class="secondary" type="submit" name="action" value="refresh">Jetzt Feeds neu laden</button>
+      </div>
+    </section>
+  </form>
+  <footer>Keine Datenbank, kein CMS – diese Seite pflegt nur die vorhandene Kiosk-Konfiguration.</footer>
+</div>
+<script>
+function addFeed(){
+  const row=document.createElement("div");
+  row.className="feed-row";
+  row.innerHTML='<input aria-label="Feed-Bezeichnung" name="feed_label" maxlength="70" placeholder="Name, z. B. Regional"><input name="feed_url" maxlength="2048" placeholder="https://…/rss.xml" inputmode="url"><button class="delete" type="button">Entfernen</button>';
+  row.querySelector("button").addEventListener("click",()=>row.remove());
+  document.getElementById("feeds").appendChild(row);
+  row.querySelector("input").focus();
+}
+const updated=document.getElementById("updated");
+if(updated && /^\d{4}-\d\d-\d\dT/.test(updated.textContent)){
+  const d=new Date(updated.textContent);
+  if(!Number.isNaN(d.getTime())) updated.textContent=d.toLocaleString("de-DE");
+}
+
+
+const designTabs=[...document.querySelectorAll("[data-design-tab]")];
+function activateDesignTab(id, focus=false){
+  for(const tab of designTabs){
+    const selected=tab.dataset.designTab===id;
+    tab.classList.toggle("active",selected);
+    tab.setAttribute("aria-selected",selected?"true":"false");
+    tab.tabIndex=selected?0:-1;
+    const panel=document.getElementById(tab.getAttribute("aria-controls"));
+    if(panel) panel.hidden=!selected;
+    if(selected&&focus) tab.focus();
+  }
+}
+for(const tab of designTabs){
+  tab.addEventListener("click",()=>activateDesignTab(tab.dataset.designTab));
+  tab.addEventListener("keydown",event=>{
+    const index=designTabs.indexOf(tab);
+    let next=index;
+    if(event.key==="ArrowRight") next=(index+1)%designTabs.length;
+    else if(event.key==="ArrowLeft") next=(index+designTabs.length-1)%designTabs.length;
+    else if(event.key==="Home") next=0;
+    else if(event.key==="End") next=designTabs.length-1;
+    else return;
+    event.preventDefault();
+    activateDesignTab(designTabs[next].dataset.designTab,true);
+  });
+}
+function markDesignDirty(){
+  const status=document.getElementById("design-draft-status");
+  if(status){
+    status.textContent="Nicht gespeicherter Entwurf";
+    status.classList.add("is-dirty");
+  }
+}
+
+const preview=document.getElementById("design-preview");
+const controls=document.getElementById("design-controls");
+let previewLogo="";
+function designPayload(){
+  const lines=document.getElementById("design_footer_names").value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean).slice(0,6);
+  const payload={
+    brand_name:document.getElementById("design_brand_name").value.trim() || "RSS2Slideshow",
+    accent_color:document.getElementById("design_accent_color").value,
+    background_color:document.getElementById("design_background_color").value,
+    text_color:document.getElementById("design_text_color").value,
+    header_color:document.getElementById("design_header_color").value,
+    footer_color:document.getElementById("design_footer_color").value,
+    font_family:document.getElementById("design_font_family").value,
+    headline_color:document.getElementById("design_headline_color").value,
+    summary_color:document.getElementById("design_summary_color").value,
+    overlay_headline_color:document.getElementById("design_overlay_headline_color").value,
+    overlay_summary_color:document.getElementById("design_overlay_summary_color").value,
+    header_height:Number(document.getElementById("design_header_height").value),
+    footer_height:Number(document.getElementById("design_footer_height").value),
+    logo_size:Number(document.getElementById("design_logo_size").value),
+    image_width:Number(document.getElementById("design_image_width").value),
+    headline_size:Number(document.getElementById("design_headline_size").value),
+    summary_size:Number(document.getElementById("design_summary_size").value),
+    image_fit:document.getElementById("design_image_fit").value,
+    story_layout:document.getElementById("design_story_layout").value,
+    show_clock:document.getElementById("design_show_clock").checked,
+    show_source:document.getElementById("design_show_source").checked,
+    show_footer_names:document.getElementById("design_show_footer_names").checked,
+    footer_names:lines
+  };
+  if(previewLogo) payload.logo_url=previewLogo;
+  return payload;
+}
+function sendDesignPreview(){
+  if(!preview || !preview.contentWindow) return;
+  preview.contentWindow.postMessage({type:"kiosk-design-preview",design:designPayload()},location.origin);
+}
+for(const range of document.querySelectorAll('#design-controls input[type="range"]')){
+  const output=document.getElementById(range.id+"_value");
+  const number=document.getElementById(range.id+"_number");
+  const sync=()=>{
+    if(output) output.textContent=range.value+(range.dataset.unit||"");
+    if(number) number.value=range.value;
+  };
+  sync();
+  range.addEventListener("input",sync);
+  if(number){
+    number.addEventListener("input",()=>{
+      if(number.value==="") return;
+      const requested=Number(number.value);
+      if(!Number.isFinite(requested)) return;
+      range.value=String(Math.round(Math.max(Number(range.min),Math.min(Number(range.max),requested))));
+      if(output) output.textContent=range.value+(range.dataset.unit||"");
+      sendDesignPreview();
+      markDesignDirty();
+    });
+    number.addEventListener("change",sync);
+  }
+}
+if(controls){
+  controls.addEventListener("input",()=>{sendDesignPreview();markDesignDirty();});
+  controls.addEventListener("change",()=>{sendDesignPreview();markDesignDirty();});
+}
+if(preview) preview.addEventListener("load",()=>setTimeout(sendDesignPreview,250));
+const logoInput=document.getElementById("design_logo");
+if(logoInput) logoInput.addEventListener("change",()=>{
+  previewLogo="";
+  markDesignDirty();
+  const file=logoInput.files && logoInput.files[0];
+  if(!file){sendDesignPreview();return;}
+  if(file.size>3*1024*1024 || !/^image\/(png|jpeg|webp)$/.test(file.type)){
+    alert("Logo bitte als PNG, JPG oder WebP mit maximal 3 MB auswählen.");
+    logoInput.value="";
+    sendDesignPreview();
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=()=>{previewLogo=String(reader.result||"");sendDesignPreview();};
+  reader.readAsDataURL(file);
+});
+</script>
+</body>
+</html>
