@@ -15,7 +15,6 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import feedparser
-import requests
 import yaml
 from flask import Flask, jsonify, send_from_directory, request, abort, render_template, make_response
 from io import BytesIO
@@ -24,6 +23,7 @@ from zoneinfo import ZoneInfo
 
 from app.branding import read_brand
 from app.feeds import get_feeds, mix_feeds
+from app.secure_feed import fetch_feed_bytes
 from addons.binary_emotions import inventory_text as binary_emotions_inventory_text, render_slide_jpeg
 
 ROOT = Path("/app") if Path("/app/config.yaml").is_file() else Path(__file__).resolve().parents[1]
@@ -375,9 +375,7 @@ def test_admin_feeds(rows):
     for label, url in rows:
         result = {"label": label or urlsplit(url).hostname or "Feed", "url": url, "ok": False, "detail": ""}
         try:
-            response = requests.get(url, timeout=(4, 10), headers={"User-Agent": USER_AGENT})
-            response.raise_for_status()
-            parsed = feedparser.parse(response.content)
+            parsed = feedparser.parse(fetch_feed_bytes(url, USER_AGENT))
             if not parsed.entries:
                 raise ValueError("keine lesbaren Artikel gefunden")
             result["ok"] = True
@@ -498,9 +496,7 @@ def _refresh_locked():
     successful_feeds = 0
     for label, url in requested:
         try:
-            response = requests.get(url, timeout=(5, 15), headers={"User-Agent": USER_AGENT})
-            response.raise_for_status()
-            parsed = feedparser.parse(response.content)
+            parsed = feedparser.parse(fetch_feed_bytes(url, USER_AGENT))
             if not parsed.entries:
                 raise ValueError("empty or unreadable feed")
             name, articles = parse_articles(parsed, label, url, active)
