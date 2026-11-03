@@ -1,4 +1,5 @@
 import unittest
+import threading
 from unittest.mock import Mock, patch
 
 import feedparser
@@ -45,6 +46,41 @@ class ReaderTests(unittest.TestCase):
             self.assertEqual([story["source"] for story in stories], ["First", "Second"])
             self.assertEqual(client.get("/kiosk").status_code, 200)
             self.assertEqual(client.get("/inventory.txt").status_code, 404)
+
+    def test_feed_failure_is_visible_without_losing_cached_articles(self):
+        source = [("Regional", "https://example.org/rss")]
+        response = Mock()
+        response.content = xml("A story", "Regional")
+        response.raise_for_status.return_value = None
+        original = {"articles": [], "updated_at": None, "sources": [],
+                    "last_success_at": None, "failed_sources": []}
+        with patch.dict(main.snapshot, original), patch.dict(main.cached_sources, {}, clear=True), \
+             patch.object(main, "get_feeds", return_value=source), \
+             patch.object(main.requests, "get", side_effect=[response, RuntimeError("network offline")]):
+            main.refresh()
+            with main.app.test_client() as client:
+                before = client.get("/healthz").get_json()
+                self.assertEqual(before["failed_feeds"], 0)
+                self.assertIsNotNone(before["last_success_at"])
+                main.refresh()
+                after = client.get("/healthz").get_json()
+                self.assertEqual(after["status"], "ok")  # HTTP liveness, not feed freshness
+                self.assertEqual(after["failed_feeds"], 1)
+                self.assertEqual(after["last_success_at"], before["last_success_at"])
+                self.assertEqual(after["articles"], 1)
+                admin_status = main.snapshot["failed_sources"]
+                self.assertEqual(admin_status, ["Regional"])
+
+    def test_refresh_lock_serializes_manual_and_background_calls(self):
+        entered = threading.Event()
+        with patch.object(main, "_refresh_locked", side_effect=lambda: entered.set()):
+            with main.refresh_lock:
+                thread = threading.Thread(target=main.refresh, daemon=True)
+                thread.start()
+                self.assertFalse(entered.wait(0.05))
+            self.assertTrue(entered.wait(1))
+            thread.join(timeout=1)
+            self.assertFalse(thread.is_alive())
 
     def test_legacy_config_feed_is_not_loaded(self):
         sources = [("File feed", "https://example.org/one")]

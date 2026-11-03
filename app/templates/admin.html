@@ -315,8 +315,10 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
         <div class="stat"><strong>{{ feeds|length }}</strong><span>Feeds konfiguriert</span></div>
         <div class="stat"><strong>{{ status.articles }}</strong><span>Artikel geladen</span></div>
         <div class="stat"><strong>{{ status.sources }}</strong><span>Quellen im letzten Lauf</span></div>
+        <div class="stat"><strong>{{ status.failed_feeds }}</strong><span>Fehlgeschlagene Feeds</span></div>
       </div>
-      <p class="muted">Letztes Update: <span id="updated">{{ status.updated_at or 'noch nicht' }}</span></p>
+      <p class="muted">Letzter Abrufversuch: <span id="updated">{{ status.updated_at or 'noch nicht' }}</span></p>
+      <p class="muted">Letzter erfolgreicher Abruf: <span id="last-success">{{ status.last_success_at or 'noch nicht' }}</span></p>
       <div class="actions">
         <button class="secondary" type="submit" name="action" value="refresh">Jetzt Feeds neu laden</button>
       </div>
@@ -333,10 +335,12 @@ function addFeed(){
   document.getElementById("feeds").appendChild(row);
   row.querySelector("input").focus();
 }
-const updated=document.getElementById("updated");
-if(updated && /^\d{4}-\d\d-\d\dT/.test(updated.textContent)){
-  const d=new Date(updated.textContent);
-  if(!Number.isNaN(d.getTime())) updated.textContent=d.toLocaleString("de-DE");
+for(const id of ["updated","last-success"]){
+  const value=document.getElementById(id);
+  if(value && /^\d{4}-\d\d-\d\dT/.test(value.textContent)){
+    const d=new Date(value.textContent);
+    if(!Number.isNaN(d.getTime())) value.textContent=d.toLocaleString("de-DE");
+  }
 }
 
 
