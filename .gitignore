@@ -1,0 +1,29 @@
+# All installation configuration belongs to the operator, not the repository.
+/config.yaml
+/.env
+/.env.*
+!/.env.example
+
+/output/
+/dist/
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Never commit runtime content, even when new settings/media types are added.
+/content/*
+!/content/feeds.example.txt
+!/content/company/
+!/content/photos/
+/content/company/*
+!/content/company/.gitkeep
+/content/photos/*
+!/content/photos/.gitkeep
+
+# Uploaded branding and other assets are always installation-local.
+/branding/*
+/assets/*
+!/assets/.gitkeep
+
+# Ignore leftover local data from the retired built-in manager.
+signage_manager/

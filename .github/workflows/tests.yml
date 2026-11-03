@@ -1,0 +1,27 @@
+name: quick checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: cp config.example.yaml config.yaml
+      - run: python -m compileall -q app addons
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/safe_update.py --help
+      - run: python scripts/export_public.py --check
+      - run: python scripts/export_public.py --output "$RUNNER_TEMP/rss2slideshow-clean-source.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rss2slideshow-clean-source
+          path: ${{ runner.temp }}/rss2slideshow-clean-source.zip
+          if-no-files-found: error
+          retention-days: 14
