@@ -16,6 +16,29 @@ jobs:
       - run: cp config.example.yaml config.yaml
       - run: python -m compileall -q app addons
       - run: python -m unittest discover -s tests -v
+      - name: Smoke-test Gunicorn WSGI on localhost
+        run: |
+          set -euo pipefail
+          gunicorn --bind 127.0.0.1:18095 --workers 1 --worker-class gthread --threads 4 \
+            --timeout 45 app.wsgi:app > "$RUNNER_TEMP/gunicorn-smoke.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent --show-error --max-time 2 \
+                 http://127.0.0.1:18095/healthz > "$RUNNER_TEMP/health.json" 2>/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 0.25
+          done
+          if [ "$ready" != 1 ]; then
+            cat "$RUNNER_TEMP/gunicorn-smoke.log"
+            exit 1
+          fi
+          python -c 'import json,os; d=json.load(open(os.environ["RUNNER_TEMP"]+"/health.json")); assert d["status"] == "ok"'
+          curl --fail --silent --show-error http://127.0.0.1:18095/api/articles \
+            | python -c 'import json,sys; d=json.load(sys.stdin); assert "articles" in d and "layout" in d'
       - run: python scripts/safe_update.py --help
       - run: python scripts/export_public.py --check
       - run: python scripts/export_public.py --output "$RUNNER_TEMP/rss2slideshow-clean-source.zip"

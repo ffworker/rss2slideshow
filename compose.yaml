@@ -13,6 +13,13 @@ services:
       BINARY_EMOTIONS_LIMIT: ${BINARY_EMOTIONS_LIMIT:-10}
     ports:
       - "${BIND_IP:-127.0.0.1}:${HTTP_PORT:-8085}:8080"
+    # HTTP readiness is checked in-container; it does not publish another port.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json, urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3))['status'] == 'ok'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     volumes:
       # Reject a missing config.yaml instead of creating a directory at this path.
       - type: bind
