@@ -55,7 +55,9 @@ if CFG.get("rss_url") or CFG.get("news_source_label"):
 
 app = Flask(__name__)
 lock = threading.Lock()
-snapshot = {"articles": [], "updated_at": None, "sources": []}
+refresh_lock = threading.Lock()
+snapshot = {"articles": [], "updated_at": None, "sources": [],
+            "last_success_at": None, "failed_sources": []}
 cached_sources = {}
 
 
@@ -395,6 +397,8 @@ def render_admin_page(message="", error="", feed_rows=None, feed_tests=None):
             "articles": len(snapshot["articles"]),
             "updated_at": snapshot["updated_at"],
             "sources": len(snapshot["sources"]),
+            "failed_feeds": len(snapshot["failed_sources"]),
+            "last_success_at": snapshot["last_success_at"],
         }
     response = make_response(render_template(
         "admin.html",
@@ -478,12 +482,20 @@ def parse_articles(feed, label, feed_url, settings=None):
 
 
 def refresh():
+    """Prevent overlapping manual/background refreshes of the shared cache."""
+    with refresh_lock:
+        return _refresh_locked()
+
+
+def _refresh_locked():
     active = runtime_settings()
     requested = get_feeds(FEED_FILE)
     if not requested:
         LOG.warning("no RSS feeds configured: add URLs to content/feeds.txt")
     groups = []
     updated_sources = {}
+    failed_sources = []
+    successful_feeds = 0
     for label, url in requested:
         try:
             response = requests.get(url, timeout=(5, 15), headers={"User-Agent": USER_AGENT})
@@ -492,10 +504,14 @@ def refresh():
             if not parsed.entries:
                 raise ValueError("empty or unreadable feed")
             name, articles = parse_articles(parsed, label, url, active)
+            if not articles:
+                raise ValueError("feed has no usable titled articles")
+            successful_feeds += 1
             updated_sources[url] = articles
             LOG.info("loaded %s: %d articles", name, len(articles))
         except Exception as exc:
             LOG.warning("could not update %s: %s", url, exc)
+            failed_sources.append(label or urlsplit(url).hostname or "Feed")
             # keep the last working stories if a feed temporarily fails.
             updated_sources[url] = cached_sources.get(url, [])
         groups.append(updated_sources[url])
@@ -506,6 +522,9 @@ def refresh():
         snapshot["articles"] = queue
         snapshot["sources"] = [label or urlsplit(url).hostname for label, url in requested]
         snapshot["updated_at"] = datetime.now(timezone.utc).isoformat()
+        snapshot["failed_sources"] = failed_sources
+        if successful_feeds:
+            snapshot["last_success_at"] = snapshot["updated_at"]
     LOG.info("kiosk queue: %d articles from %d configured feeds", len(queue), len(requested))
     return requested
 
@@ -716,7 +735,9 @@ def article_qr(article_id, fingerprint):
 def health():
     with lock:
         return jsonify({"status": "ok", "articles": len(snapshot["articles"]),
-                        "updated_at": snapshot["updated_at"]})
+                        "updated_at": snapshot["updated_at"],
+                        "last_success_at": snapshot["last_success_at"],
+                        "failed_feeds": len(snapshot["failed_sources"])})
 
 
 if __name__ == "__main__":
