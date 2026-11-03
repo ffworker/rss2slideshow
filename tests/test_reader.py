@@ -1,6 +1,6 @@
 import unittest
 import threading
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import feedparser
 
@@ -30,14 +30,11 @@ class ReaderTests(unittest.TestCase):
         self.assertIn("2026-09-22", stories[0]["published"])
 
     def test_named_feeds_get_mixed_instead_of_one_big_block(self):
-        def fake_get(url, **kwargs):
-            answer = Mock()
-            answer.content = xml("A", "first") if "one" in url else xml("B", "second")
-            answer.raise_for_status.return_value = None
-            return answer
+        def fake_get(url, user_agent):
+            return xml("A", "first") if "one" in url else xml("B", "second")
 
         sources = [("First", "https://example.org/one"), ("Second", "https://example.org/two")]
-        with patch.object(main, "get_feeds", return_value=sources), patch.object(main.requests, "get", side_effect=fake_get):
+        with patch.object(main, "get_feeds", return_value=sources), patch.object(main, "fetch_feed_bytes", side_effect=fake_get):
             main.refresh()
         with main.app.test_client() as client:
             result = client.get("/api/articles")
@@ -49,14 +46,12 @@ class ReaderTests(unittest.TestCase):
 
     def test_feed_failure_is_visible_without_losing_cached_articles(self):
         source = [("Regional", "https://example.org/rss")]
-        response = Mock()
-        response.content = xml("A story", "Regional")
-        response.raise_for_status.return_value = None
+        response = xml("A story", "Regional")
         original = {"articles": [], "updated_at": None, "sources": [],
                     "last_success_at": None, "failed_sources": []}
         with patch.dict(main.snapshot, original), patch.dict(main.cached_sources, {}, clear=True), \
              patch.object(main, "get_feeds", return_value=source), \
-             patch.object(main.requests, "get", side_effect=[response, RuntimeError("network offline")]):
+             patch.object(main, "fetch_feed_bytes", side_effect=[response, RuntimeError("network offline")]):
             main.refresh()
             with main.app.test_client() as client:
                 before = client.get("/healthz").get_json()
@@ -84,18 +79,15 @@ class ReaderTests(unittest.TestCase):
 
     def test_legacy_config_feed_is_not_loaded(self):
         sources = [("File feed", "https://example.org/one")]
-        response = Mock()
-        response.content = xml("From file", "File feed")
-        response.raise_for_status.return_value = None
+        response = xml("From file", "File feed")
         with patch.dict(main.CFG, {
             "rss_url": "https://example.org/OLD",
             "news_source_label": "OLD source"
         }), patch.object(main, "get_feeds", return_value=sources) as reader, \
-             patch.object(main.requests, "get", return_value=response) as fetch:
+             patch.object(main, "fetch_feed_bytes", return_value=response) as fetch:
             main.refresh()
         reader.assert_called_once_with(main.FEED_FILE)
-        fetch.assert_called_once()
-        self.assertEqual(fetch.call_args.args[0], "https://example.org/one")
+        fetch.assert_called_once_with("https://example.org/one", main.USER_AGENT)
 
     def test_kiosk_renders_per_slide_qr_without_external_service(self):
         with main.app.test_client() as client:

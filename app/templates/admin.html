@@ -319,6 +319,9 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
       </div>
       <p class="muted">Letzter Abrufversuch: <span id="updated">{{ status.updated_at or 'noch nicht' }}</span></p>
       <p class="muted">Letzter erfolgreicher Abruf: <span id="last-success">{{ status.last_success_at or 'noch nicht' }}</span></p>
+      {% if status.failed_sources %}
+      <p class="notice err" role="status">Abruf fehlgeschlagen: {{ status.failed_sources|join(', ') }}. Zwischengespeicherte Artikel bleiben sichtbar, falls vorhanden.</p>
+      {% endif %}
       <div class="actions">
         <button class="secondary" type="submit" name="action" value="refresh">Jetzt Feeds neu laden</button>
       </div>

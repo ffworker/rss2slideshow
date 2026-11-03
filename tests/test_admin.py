@@ -47,6 +47,14 @@ class AdminTests(unittest.TestCase):
                 self.assertIn(b"design_overlay_headline_color", response.data)
                 self.assertIn(b"design_font_family", response.data)
 
+    def test_authenticated_admin_shows_failed_feed_names(self):
+        with patch.dict(os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}), \
+             patch.dict(main.snapshot, {"failed_sources": ["Regional"]}):
+            with main.app.test_client() as client:
+                response = client.get("/admin", headers=auth_header())
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Abruf fehlgeschlagen: Regional", response.get_data(as_text=True))
+
     def test_design_studio_full_width_preview_and_compact_content_sections(self):
         with patch.dict(os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}):
             with main.app.test_client() as client:
