@@ -396,6 +396,7 @@ def render_admin_page(message="", error="", feed_rows=None, feed_tests=None):
             "updated_at": snapshot["updated_at"],
             "sources": len(snapshot["sources"]),
             "failed_feeds": len(snapshot["failed_sources"]),
+            "failed_sources": list(snapshot["failed_sources"]),
             "last_success_at": snapshot["last_success_at"],
         }
     response = make_response(render_template(
