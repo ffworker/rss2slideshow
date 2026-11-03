@@ -16,6 +16,7 @@ import stat
 import subprocess
 import sys
 import tarfile
+import time
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +41,12 @@ DISPLAY_FIELDS = (
     "show_clock", "show_source", "show_footer_names",
 )
 # Execute inside the service, so no secret or published host port is needed.
+HEALTH_SCRIPT = (
+    "import json, urllib.request; "
+    "response=urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3); "
+    "data=json.load(response); "
+    "assert data.get('status') == 'ok'"
+)
 API_SCRIPT = (
     "import json, urllib.request; "
     "response=urllib.request.urlopen('http://127.0.0.1:8080/api/articles', timeout=8); "
@@ -135,6 +142,24 @@ def changed_keys(before: dict[str, object], after: dict[str, object]) -> list[st
     )
 
 
+def wait_for_service_ready(timeout: float = 45) -> None:
+    """Wait until the restarted web process serves HTTP, not just Docker 'running'."""
+    deadline = time.monotonic() + timeout
+    last_error = None
+    while True:
+        try:
+            command("docker", "compose", "exec", "-T", "signage", "python", "-c", HEALTH_SCRIPT)
+            return
+        except UpdateError as exc:
+            last_error = exc
+        if time.monotonic() >= deadline:
+            raise UpdateError(
+                "Restarted service did not answer /healthz within "
+                + str(timeout) + " seconds"
+            ) from last_error
+        time.sleep(1)
+
+
 def display_snapshot() -> dict[str, object]:
     data = json.loads(command("docker", "compose", "exec", "-T", "signage", "python", "-c", API_SCRIPT))
     if not isinstance(data, dict) or "brand_name" not in data:
@@ -189,6 +214,7 @@ def update(directory: Path, no_ui_check: bool = False) -> None:
     command("git", "merge", "--ff-only", "FETCH_HEAD")
     verify_files(signatures, "during git update")
     command("docker", "compose", "up", "-d", "--build", "signage")
+    wait_for_service_ready()
     verify_files(signatures, "during container rebuild")
     if prior_display is not None:
         current_display = display_snapshot()

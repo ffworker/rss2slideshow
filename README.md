@@ -11,6 +11,7 @@ A personal project by **Bytegeist / ffworker**, created in my **own free time, o
 - Admin editor for RSS feeds, typography, layout, colors and uploaded logos
 - Optional JPEG output for older slideshow players
 - Docker Compose deployment with persistent local settings
+- Gunicorn HTTP runtime (one worker to preserve the in-memory RSS refresh cache)
 
 ## Quick start
 
@@ -41,7 +42,7 @@ Runtime settings are kept out of Git and the Docker image:
 | `content/feeds.txt` | Your RSS feeds |
 | `config.yaml`, `.env` | Deployment settings and secrets |
 
-Use `python3 scripts/safe_update.py check` and `python3 scripts/safe_update.py update` for manual upgrades with a backup and configuration drift checks. There is no automatic deployment.
+Use `python3 scripts/safe_update.py check` and `python3 scripts/safe_update.py update` for manual upgrades with a backup and configuration drift checks. There is no automatic deployment. The container uses a bounded in-container HTTP healthcheck; a healthy response is not proof that RSS content or browser rendering is correct.
 
 See [Deployment](docs/deployment.md), [Branding](docs/branding.md), [Update safety](docs/update-safety.md).
 
