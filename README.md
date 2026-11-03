@@ -2,6 +2,8 @@
 
 Self-hosted RSS news display with a browser kiosk and compact web editor.
 
+Project story: [Bytegeist Blog · RSS2Slideshow / 003](https://blog.bytegeist.dev/artikel/rss2slideshow/).
+
 A personal project by **Bytegeist / ffworker**, created in my **own free time, outside working hours**. It is not an employer product or endorsement.
 
 ## Features
