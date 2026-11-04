@@ -351,7 +351,7 @@ class AdminTests(unittest.TestCase):
     def test_read_saved_expanded_header_and_logo_values(self):
         with tempfile.TemporaryDirectory() as tmp:
             settings_file = Path(tmp) / "ui-settings.yaml"
-            settings_file.write_text("header_height: 310\\nlogo_size: 235\\n", encoding="utf-8")
+            settings_file.write_text("header_height: 310\nlogo_size: 235\n", encoding="utf-8")
             with patch.object(main, "DESIGN_SETTINGS_FILE", settings_file):
                 saved = main.read_design_settings()
         self.assertEqual(saved["header_height"], 310)
