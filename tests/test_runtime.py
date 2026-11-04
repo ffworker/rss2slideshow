@@ -1,5 +1,7 @@
 """Regression checks for the production WSGI server and guarded restart."""
 import importlib
+import json
+import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -52,6 +54,41 @@ class RuntimeTests(unittest.TestCase):
         with patch.object(safe_update, "command", side_effect=safe_update.UpdateError("not ready")), \
              self.assertRaisesRegex(safe_update.UpdateError, "did not answer /healthz"):
             safe_update.wait_for_service_ready(timeout=0)
+
+
+    def test_anthias_playlist_advances_only_with_a_new_request_and_persists(self):
+        items = [
+            {"id": "a", "feed_index": 0, "feed_id": "hessenschau", "title": "One"},
+            {"id": "b", "feed_index": 0, "feed_id": "hessenschau", "title": "Two"},
+            {"id": "c", "feed_index": 1, "feed_id": "regional", "title": "Other"},
+        ]
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+            main, "PLAYLIST_STATE_FILE", Path(tmp) / "playlist-state.json"
+        ), patch.dict(main.snapshot, {"articles": items}):
+            with main.app.test_client() as client:
+                first = client.get("/api/playlist-next?feed=0")
+                second = client.get("/api/playlist-next?feed=0")
+                independent = client.get("/api/playlist-next?feed=1")
+                third = client.get("/api/playlist-next?feed=0")
+                bad = client.get("/api/playlist-next?feed=../etc")
+                unavailable = client.get("/api/playlist-next?feed=99")
+                persisted = json.loads(main.PLAYLIST_STATE_FILE.read_text())
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual([res.get_json()["article"]["id"] for res in (first, second, third)],
+                         ["a", "b", "a"])
+        self.assertEqual(independent.get_json()["article"]["id"], "c")
+        self.assertEqual(persisted["feed:hessenschau"], "a")
+        self.assertEqual(persisted["feed:regional"], "c")
+        self.assertEqual(bad.status_code, 400)
+        self.assertEqual(unavailable.status_code, 404)
+
+    def test_bistro_player_has_website_one_article_mode(self):
+        player = (ROOT / "app/player.html").read_text(encoding="utf-8")
+        self.assertIn('playlistParams.get("playlist") === "1"', player)
+        self.assertIn('"/api/playlist-next"', player)
+        self.assertIn('visibilitychange', player)
+        self.assertIn('var(--ui-content-top', player)
+        self.assertIn('var(--ui-clock-size', player)
 
 
 if __name__ == "__main__":
