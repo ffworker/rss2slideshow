@@ -116,6 +116,7 @@ class AdminTests(unittest.TestCase):
             "max_articles", "refresh_minutes", "design-draft-status",
             "design_clock_size", "design_content_top", "design_content_bottom",
             "design_image_side", "design_qr_position", "design_qr_size",
+            "design_show_qr", "design_summary_max_chars",
             "preview-viewport",
         ):
             self.assertIn(required_id, ids)
@@ -234,6 +235,7 @@ class AdminTests(unittest.TestCase):
                             "design_image_width": "60",
                             "design_headline_size": "98",
                             "design_summary_size": "48",
+                            "design_summary_max_chars": "240",
                             "design_clock_size": "42",
                             "design_content_top": "24",
                             "design_content_bottom": "44",
@@ -243,6 +245,7 @@ class AdminTests(unittest.TestCase):
                             "design_image_fit": "cover",
                             "design_story_layout": "overlay",
                             "design_show_clock": "on",
+                            "design_show_qr": "on",
                             "design_show_source": "on",
                             "design_show_footer_names": "on",
                             "design_footer_names": "Example A\nExample B\nExample C",
@@ -259,6 +262,8 @@ class AdminTests(unittest.TestCase):
                     self.assertEqual(saved["font_family"], "Verdana")
                     self.assertEqual(saved["headline_size"], 98)
                     self.assertEqual(saved["summary_size"], 48)
+                    self.assertEqual(saved["summary_max_chars"], 240)
+                    self.assertTrue(saved["show_qr"])
                     self.assertEqual(saved["clock_size"], 42)
                     self.assertEqual(saved["content_top"], 24)
                     self.assertEqual(saved["content_bottom"], 44)
@@ -277,6 +282,8 @@ class AdminTests(unittest.TestCase):
                     self.assertEqual(api["brand_name"], "Example News")
                     self.assertEqual(api["headline_size"], 98)
                     self.assertEqual(api["summary_size"], 48)
+                    self.assertEqual(api["summary_max_chars"], 240)
+                    self.assertTrue(api["show_qr"])
                     self.assertEqual(api["clock_size"], 42)
                     self.assertEqual(api["qr_size"], 170)
                     self.assertEqual(api["image_side"], "right")
@@ -298,6 +305,23 @@ class AdminTests(unittest.TestCase):
                     after = client.get("/api/articles").get_json()
                     self.assertFalse(after["design_enabled"])
 
+    def test_hidden_qr_and_text_limit_are_validated_without_changing_feed_source(self):
+        base = {
+            "design_brand_name": "Bistro",
+            "design_accent_color": "#2563eb",
+            "design_background_color": "#f8fafc",
+            "design_text_color": "#202020",
+            "design_header_color": "#ffffff",
+            "design_footer_color": "#eef2f7",
+            "design_summary_max_chars": "130",
+        }
+        design = main.validate_design_form(base)
+        self.assertFalse(design["show_qr"], "Unchecked QR control must hide the card")
+        self.assertEqual(design["summary_max_chars"], 130)
+        self.assertEqual(main.validate_design_form({**base, "design_summary_max_chars": "0"})["summary_max_chars"], 0)
+        self.assertEqual(main.validate_design_form({**base, "design_summary_max_chars": "9999"})["summary_max_chars"], 900)
+        self.assertTrue(main.validate_design_form({**base, "design_show_qr": "on"})["show_qr"])
+
     def test_new_typography_controls_validate_inputs_and_old_design_files_get_safe_defaults(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(
             os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}
@@ -312,6 +336,8 @@ class AdminTests(unittest.TestCase):
                 design = main.read_design_settings()
                 self.assertEqual(design["font_family"], "sans")
                 self.assertEqual(design["headline_size"], 55)
+                self.assertEqual(design["summary_max_chars"], 900)
+                self.assertTrue(design["show_qr"])
                 self.assertEqual(design["overlay_headline_color"], design["accent_color"])
                 self.assertEqual(design["overlay_summary_color"], "#ffffff")
                 previous = design_file.read_text(encoding="utf-8")
