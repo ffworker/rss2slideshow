@@ -105,6 +105,42 @@ button.secondary,a.secondary{background:#fff;color:var(--ink);border-color:#d3cf
 a.preview-open{background:#fff;color:#282923;border-color:#fff;padding:8px 12px;font-size:12px}
 .preview-viewport{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:#fff;border-radius:7px}
 .preview-frame{display:block;position:absolute;top:0;left:0;width:1920px;height:1080px;border:0;background:#fff;transform-origin:top left;transform:scale(var(--preview-scale,1))}
+/* Optional editing focus: the existing controls and single 16:9 iframe are moved
+   side by side in a full-viewport workspace. No duplicate fields or preview. */
+.studio-focus-trigger{background:#fff!important;color:#974013!important;border:1px solid #e5bc97!important}
+.studio-focus-trigger[aria-pressed="true"]{background:#fee9d8!important}
+body.studio-focus-active{overflow:hidden}
+#design-editor.studio-focus{position:fixed;inset:0;z-index:1000;width:100vw;height:100vh;height:100dvh;max-height:100dvh;display:grid;grid-template-columns:clamp(315px,30vw,420px) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:0;margin:0;border:0;border-radius:0;overflow:hidden;background:#fff;box-shadow:none}
+.studio-focus .studio-heading{grid-column:1/-1;padding:11px 20px;min-height:66px;border-bottom:1px solid #e9dfd3;background:#fff;gap:12px}
+.studio-focus .studio-heading h2{font-size:19px}
+.studio-focus .studio-subtitle{font-size:11px}
+.studio-focus .design-controls{grid-column:1;grid-row:2;margin:0;border:0;border-right:1px solid #e2d7ca;border-radius:0;min-width:0;min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+.studio-focus .tool-tabs{position:sticky;top:0;z-index:3;border-bottom:1px solid #e7ded2}
+.studio-focus .tool-tab{flex:1 1 120px;min-height:39px}
+.studio-focus .slider-grid,.studio-focus .slider-options{grid-template-columns:1fr}
+.studio-focus .preview-shell{grid-column:2;grid-row:2;min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:15px 20px;border-radius:0}
+.studio-focus .preview-bar,.studio-focus .preview-footnote{width:100%;max-width:100%;flex:0 0 auto;margin:0}
+.studio-focus .preview-viewport{flex:0 0 auto;width:min(100%,calc((100dvh - 205px) * 16 / 9));box-shadow:0 8px 32px rgba(0,0,0,.22)}
+.studio-focus .preview-footnote{gap:10px}
+.studio-focus .preview-footnote span{max-width:460px}
+.preview-zone-guide{display:none;position:absolute;z-index:3;left:0;width:100%;box-shadow:inset 0 0 0 3px rgba(255,135,43,.98);background:rgba(240,128,25,.075);pointer-events:none}
+.preview-zone-guide span{position:absolute;top:7px;right:7px;padding:5px 8px;border-radius:5px;background:rgba(35,31,25,.9);color:#fff;font:700 12px Arial,Helvetica,sans-serif}
+.studio-focus .preview-viewport[data-zone="header"] .preview-zone-guide{display:block;top:0;height:calc(var(--studio-header-height,150px) * var(--preview-scale,1))}
+.studio-focus .preview-viewport[data-zone="body"] .preview-zone-guide{display:block;top:calc(var(--studio-header-height,150px) * var(--preview-scale,1));bottom:calc(var(--studio-footer-height,82px) * var(--preview-scale,1))}
+.studio-focus .preview-viewport[data-zone="footer"] .preview-zone-guide{display:block;bottom:0;height:calc(var(--studio-footer-height,82px) * var(--preview-scale,1))}
+@media(max-width:900px){
+  #design-editor.studio-focus{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(180px,42dvh) minmax(0,1fr)}
+  .studio-focus .design-controls{grid-column:1;grid-row:2;border-right:0;border-bottom:1px solid #e2d7ca}
+  .studio-focus .preview-shell{grid-column:1;grid-row:3;padding:10px;gap:5px}
+  .studio-focus .preview-viewport{width:min(100%,calc((58dvh - 140px) * 16 / 9))}
+  .studio-focus .preview-footnote{display:none}
+  .studio-focus .preview-bar{margin:0}
+}
+@media(max-height:580px) and (min-width:901px){
+  .studio-focus .studio-heading{min-height:52px;padding:6px 15px}
+  .studio-focus .preview-footnote{display:none}
+  .studio-focus .preview-viewport{width:min(100%,calc((100dvh - 130px) * 16 / 9))}
+}
 .preview-footnote{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:13px 2px 0}
 .preview-footnote span{color:#d6d4cb;font-size:12px;line-height:1.5;max-width:900px}
 .preview-footnote strong{color:#fff}
@@ -163,7 +199,7 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
     <section class="card studio-card" id="design-editor">
       <div class="studio-heading">
         <div><span class="eyebrow">GESTALTUNG</span><h2>Design-Studio</h2><p class="studio-subtitle">Schriften, Farben und Aufbau anpassen – veröffentlicht wird erst beim Speichern.</p></div>
-        <div class="studio-heading-actions"><span id="design-draft-status" class="draft-status" role="status" aria-live="polite">Gespeicherter Stand</span><button class="primary" type="submit" name="action" value="save_design">Design speichern</button></div>
+        <div class="studio-heading-actions"><span id="design-draft-status" class="draft-status" role="status" aria-live="polite">Gespeicherter Stand</span><button id="studio-focus-toggle" class="studio-focus-trigger" type="button" aria-pressed="false" aria-controls="design-editor">Große Vorschau</button><button class="primary" type="submit" name="action" value="save_design">Design speichern</button></div>
       </div>
       <div class="design-controls" id="design-controls">
         <div class="tool-tabs" role="tablist" aria-label="Design-Werkzeuge">
@@ -334,7 +370,7 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
       </div>
       <div class="preview-shell">
         <div class="preview-bar"><div class="preview-caption"><strong>TV-Vorschau</strong><span>1920 × 1080 (16:9), proportional verkleinert</span></div><a class="button preview-open" href="{{ kiosk_path }}" target="_blank" rel="noopener">Echten Kiosk öffnen ↗</a></div>
-        <div id="preview-viewport" class="preview-viewport"><iframe id="design-preview" class="preview-frame" src="{{ kiosk_path }}" title="Kiosk-TV-Designvorschau in 1920 mal 1080"></iframe></div>
+        <div id="preview-viewport" class="preview-viewport"><iframe id="design-preview" class="preview-frame" src="{{ kiosk_path }}" title="Kiosk-TV-Designvorschau in 1920 mal 1080"></iframe><div class="preview-zone-guide" aria-hidden="true"><span id="preview-zone-label"></span></div></div>
         <div class="preview-footnote">
           <span>Die Vorschau simuliert 1920 × 1080. Design speichern und anschließend am Bistro-TV prüfen (Browser-Zoom und Overscan können abweichen).</span>
           <div class="preview-footnote-actions"><button class="secondary reset-action" type="submit" name="action" value="reset_design" formnovalidate onclick="return confirm('Design wirklich auf den hinterlegten Kundenstandard zurücksetzen?')">Zurücksetzen</button><button class="primary" type="submit" name="action" value="save_design">Design speichern</button></div>
@@ -470,6 +506,64 @@ function markDesignDirty(){
 
 const preview=document.getElementById("design-preview");
 const previewViewport=document.getElementById("preview-viewport");
+const studio=document.getElementById("design-editor");
+const focusToggle=document.getElementById("studio-focus-toggle");
+const previewGuideLabel=document.getElementById("preview-zone-label");
+function toggleStudioFocus(enable){
+  if(!studio || !focusToggle) return;
+  studio.classList.toggle("studio-focus",enable);
+  document.body.classList.toggle("studio-focus-active",enable);
+  focusToggle.setAttribute("aria-pressed",String(enable));
+  focusToggle.textContent=enable ? "Zur normalen Ansicht" : "Große Vorschau";
+  if(previewViewport) previewViewport.removeAttribute("data-zone");
+  requestAnimationFrame(sizeTvPreview);
+}
+if(focusToggle) focusToggle.addEventListener("click",()=>{
+  const enable=!studio.classList.contains("studio-focus");
+  toggleStudioFocus(enable);
+  if(enable) activateDesignTab("layout");
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape" && studio && studio.classList.contains("studio-focus")){
+    event.preventDefault();
+    toggleStudioFocus(false);
+    focusToggle.focus();
+  }
+});
+function showPreviewZone(field){
+  if(!studio?.classList.contains("studio-focus") || !previewViewport) return;
+  const id=field?.id || "";
+  const zone=/header_height|logo_size|clock_size|show_clock|show_source/.test(id) ? "header" :
+    /footer_height|footer_names|show_footer_names/.test(id) ? "footer" : "body";
+  const label=zone==="header" ? "Kopfzeile / Logo" : zone==="footer" ? "Fußzeile" : "Nachrichtenbereich";
+  previewViewport.style.setProperty("--studio-header-height",(Number(document.getElementById("design_header_height")?.value)||150)+"px");
+  previewViewport.style.setProperty("--studio-footer-height",(Number(document.getElementById("design_footer_height")?.value)||82)+"px");
+  previewViewport.dataset.zone=zone;
+  if(previewGuideLabel) previewGuideLabel.textContent=label;
+}
+const designControlsForGuide=document.getElementById("design-controls");
+if(designControlsForGuide){
+  designControlsForGuide.addEventListener("pointerover",event=>{
+    const field=event.target.closest(".slider-card, .design-field");
+    if(field && designControlsForGuide.contains(field))
+      showPreviewZone(field.querySelector('input[type="range"],input[id^="design_"],select[id^="design_"]'));
+  });
+  designControlsForGuide.addEventListener("pointerout",event=>{
+    if(event.relatedTarget && designControlsForGuide.contains(event.relatedTarget) && event.target.closest(".slider-card, .design-field")?.contains(event.relatedTarget)) return;
+    if(previewViewport) previewViewport.removeAttribute("data-zone");
+  });
+  designControlsForGuide.addEventListener("focusin",event=>{
+    if(event.target.closest(".slider-card, .design-field")) showPreviewZone(event.target);
+  });
+  designControlsForGuide.addEventListener("focusout",event=>{
+    if(!event.relatedTarget || !designControlsForGuide.contains(event.relatedTarget)){
+      if(previewViewport) previewViewport.removeAttribute("data-zone");
+    }
+  });
+  designControlsForGuide.addEventListener("input",event=>{
+    if(event.target.closest(".slider-card, .design-field")) showPreviewZone(event.target);
+  });
+}
 function sizeTvPreview(){
   if (!previewViewport) return;
   previewViewport.style.setProperty("--preview-scale", String(previewViewport.clientWidth/1920));
