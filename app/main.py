@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 
 import feedparser
 import yaml
-from flask import Flask, jsonify, send_from_directory, request, abort, render_template, make_response
+from flask import Flask, jsonify, send_from_directory, request, abort, render_template, make_response, url_for
 from io import BytesIO
 import qrcode
 from zoneinfo import ZoneInfo
@@ -424,6 +424,10 @@ def render_admin_page(message="", error="", feed_rows=None, feed_tests=None):
             "failed_sources": list(snapshot["failed_sources"]),
             "last_success_at": snapshot["last_success_at"],
         }
+    # Legacy "/" links can be intercepted by a front proxy even when /admin works.
+    # Prefer the dedicated Flask kiosk endpoint for both iframe and open links.
+    configured_kiosk_path = (os.environ.get("ADMIN_KIOSK_PATH") or "").strip()
+    kiosk_path = url_for("kiosk") if configured_kiosk_path in ("", "/") else configured_kiosk_path
     response = make_response(render_template(
         "admin.html",
         csrf=admin_form_token(),
@@ -434,7 +438,7 @@ def render_admin_page(message="", error="", feed_rows=None, feed_tests=None):
         message=message,
         error=error,
         feed_tests=feed_tests or [],
-        kiosk_path=os.environ.get("ADMIN_KIOSK_PATH", "/") or "/",
+        kiosk_path=kiosk_path,
     ))
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Frame-Options"] = "DENY"
