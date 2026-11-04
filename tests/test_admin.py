@@ -131,6 +131,27 @@ class AdminTests(unittest.TestCase):
         self.assertIn("markDesignDirty", html)
         self.assertIn("aspect-ratio:16/9", html)
         self.assertNotIn(".design-layout{display:grid;grid-template-columns:minmax(320px,420px)", html)
+        self.assertIn("slider-grid", html)
+        self.assertIn("slider-card", html)
+        self.assertIn("slider-step", html)
+        self.assertIn("slider-number", html)
+        self.assertIn("Kopfzeile", html)
+        self.assertIn("Nachrichtenbereich", html)
+        self.assertIn("Fußzeile &amp; QR-Code", html)
+        ranges = {attrs["id"]: attrs for tag, attrs in elements if tag == "input"
+                  and attrs.get("type") == "range"}
+        self.assertEqual(len(ranges), 11)
+        self.assertEqual(ranges["design_header_height"]["max"], "320")
+        self.assertEqual(ranges["design_logo_size"]["max"], "240")
+        for range_id, attrs in ranges.items():
+            self.assertIn(range_id + "_number", ids)
+            self.assertEqual(attrs.get("step"), "1")
+        steppers = [attrs for tag, attrs in elements
+                    if tag == "button" and "slider-step" in attrs.get("class", "").split()]
+        self.assertEqual(len(steppers), 22)
+        self.assertTrue(all(s.get("type") == "button" for s in steppers))
+        self.assertEqual(set(s["data-target"] for s in steppers), set(ranges))
+        self.assertTrue(all(s.get("aria-label") for s in steppers))
 
     def test_customer_can_save_feeds_and_get_a_backup(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(
@@ -229,9 +250,9 @@ class AdminTests(unittest.TestCase):
                             "design_summary_color": "#203040",
                             "design_overlay_headline_color": "#2563eb",
                             "design_overlay_summary_color": "#ffffff",
-                            "design_header_height": "160",
+                            "design_header_height": "310",
                             "design_footer_height": "88",
-                            "design_logo_size": "120",
+                            "design_logo_size": "235",
                             "design_image_width": "60",
                             "design_headline_size": "98",
                             "design_summary_size": "48",
@@ -260,6 +281,8 @@ class AdminTests(unittest.TestCase):
                     self.assertEqual(saved["image_fit"], "cover")
                     self.assertEqual(saved["story_layout"], "overlay")
                     self.assertEqual(saved["font_family"], "Verdana")
+                    self.assertEqual(saved["header_height"], 310)
+                    self.assertEqual(saved["logo_size"], 235)
                     self.assertEqual(saved["headline_size"], 98)
                     self.assertEqual(saved["summary_size"], 48)
                     self.assertEqual(saved["summary_max_chars"], 240)
@@ -280,6 +303,8 @@ class AdminTests(unittest.TestCase):
                     api = client.get("/api/articles").get_json()
                     self.assertTrue(api["design_enabled"])
                     self.assertEqual(api["brand_name"], "Example News")
+                    self.assertEqual(api["header_height"], 310)
+                    self.assertEqual(api["logo_size"], 235)
                     self.assertEqual(api["headline_size"], 98)
                     self.assertEqual(api["summary_size"], 48)
                     self.assertEqual(api["summary_max_chars"], 240)
@@ -304,6 +329,33 @@ class AdminTests(unittest.TestCase):
                     self.assertFalse((content / "design-logo.png").exists())
                     after = client.get("/api/articles").get_json()
                     self.assertFalse(after["design_enabled"])
+
+    def test_header_logo_new_limits_are_bounded_server_side(self):
+        base = {
+            "design_brand_name": "Bistro",
+            "design_accent_color": "#2563eb",
+            "design_background_color": "#f8fafc",
+            "design_text_color": "#202020",
+            "design_header_color": "#ffffff",
+            "design_footer_color": "#eef2f7",
+            "design_header_height": "900",
+            "design_logo_size": "900",
+        }
+        oversized = main.validate_design_form(base)
+        self.assertEqual(oversized["header_height"], 320)
+        self.assertEqual(oversized["logo_size"], 240)
+        undersized = main.validate_design_form({**base, "design_header_height": "1", "design_logo_size": "1"})
+        self.assertEqual(undersized["header_height"], 80)
+        self.assertEqual(undersized["logo_size"], 50)
+
+    def test_read_saved_expanded_header_and_logo_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            settings_file = Path(tmp) / "ui-settings.yaml"
+            settings_file.write_text("header_height: 310\nlogo_size: 235\n", encoding="utf-8")
+            with patch.object(main, "DESIGN_SETTINGS_FILE", settings_file):
+                saved = main.read_design_settings()
+        self.assertEqual(saved["header_height"], 310)
+        self.assertEqual(saved["logo_size"], 235)
 
     def test_hidden_qr_and_text_limit_are_validated_without_changing_feed_source(self):
         base = {
