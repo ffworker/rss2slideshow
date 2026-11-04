@@ -181,7 +181,7 @@ class AdminTests(unittest.TestCase):
         self.assertIn("studio-focus .preview-shell", html)
         self.assertIn('activateDesignTab("layout")', html)
         self.assertIn('event.key==="Escape"', html)
-        self.assertIn('event.data.type !== "kiosk-design-preview"', html)
+        self.assertIn('type:"kiosk-design-preview"', html)
         self.assertIn("requestAnimationFrame(sizeTvPreview)", html)
         self.assertIn("pointerover", html)
         self.assertIn("focusin", html)
