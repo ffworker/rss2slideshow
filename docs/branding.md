@@ -46,3 +46,24 @@ In **/admin → Design-Studio → Layout & Größen**:
 Changes are previewed before saving and persisted into
 `content/ui-settings.yaml`. Older designs without these keys continue with
 QR visible and up to 900 summary characters.
+
+## Bistro Design-Studio: Schieberegler
+
+Unter **/admin → Design-Studio → Layout & Größen** sind die Einstellungen
+nach **Kopfzeile**, **Nachrichtenbereich** sowie **Fußzeile & QR-Code** geordnet.
+Jeder Wert lässt sich durch Ziehen des Reglers, durch `−`/`+` oder durch die
+direkt editierbare Zahl ändern. Die neuen Regler funktionieren auch per
+Tastatur, zeigen den verfügbaren Bereich an und aktualisieren die
+TV-Live-Vorschau, bevor eine Änderung gespeichert wird.
+
+Die Bistro-Grenzwerte wurden bewusst leicht erweitert:
+
+- **Header-Höhe:** 80–320 px (zuvor max. 220 px)
+- **Logo-Größe:** 50–240 px (zuvor max. 170 px)
+
+Die erweiterten Werte werden serverseitig validiert, in
+`content/ui-settings.yaml` gespeichert und im Kiosk identisch angewendet.
+Bei großen Logos die Header-Höhe mit anpassen und die Darstellung am
+physischen Bistro-TV prüfen; die 1920×1080-Vorschau ersetzt diesen Test nicht.
+Die Änderungen betreffen nur die UI-Einstellungen von RSS2Slideshow; weder
+Anthias Hub noch die bestehenden RSS-Feeds werden verändert.
