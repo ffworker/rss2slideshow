@@ -51,13 +51,43 @@ button.secondary,a.secondary{background:#fff;color:var(--ink);border-color:#d3cf
 .color-row .muted{font-size:11px}
 #design-panel-brand .design-group>.design-field:first-of-type{max-width:480px;margin-bottom:12px}
 #design-panel-type .design-group>.design-field:first-of-type{max-width:420px}
-#design-panel-layout .design-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 18px}
-#design-panel-layout .design-group h3{grid-column:1/-1;margin-bottom:0}
+/* TV controls: calm, grouped cards, with a full-width thumb target and editable numeric value. */
+#design-panel-layout .design-group{display:block}
+#design-panel-layout .design-group>h3{margin-bottom:5px}
 #design-panel-layout .design-field{margin:0!important}
-.range-row{display:grid;grid-template-columns:minmax(60px,1fr) 62px 44px;align-items:center;gap:7px}
-.range-row input[type=range]{width:100%;min-width:0;accent-color:var(--accent-ui)}
-.range-row input[type=number]{min-height:34px;height:34px;padding:5px;text-align:center}
-.range-value{text-align:right;font-size:12px;font-weight:700;color:#6f695f;font-variant-numeric:tabular-nums}
+.slider-intro{margin:0 0 17px}
+.slider-section{margin-top:19px}
+.slider-section:first-of-type{margin-top:0}
+.slider-section-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 12px;margin:0 0 10px}
+.slider-section-heading h4{font-size:13px;letter-spacing:-.01em;margin:0;color:#484035}
+.slider-section-heading p{font-size:11px;color:var(--muted);margin:0;line-height:1.4}
+.slider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.slider-card{border:1px solid #e5dfd4;border-radius:13px;background:linear-gradient(160deg,#fff 0%,#fdfbf7 100%);padding:14px 15px 12px;min-width:0;transition:border-color .15s,box-shadow .15s}
+.slider-card:hover{border-color:#dac2ad}
+.slider-card:focus-within{border-color:#df864e;box-shadow:0 0 0 3px rgba(216,93,27,.09)}
+.slider-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.slider-heading label{font-size:13px;font-weight:750;margin:0;line-height:1.35}
+.slider-number{display:flex;align-items:center;flex:none;background:#fff;border:1px solid #d6cdbf;border-radius:9px;padding:0 8px 0 0;height:40px}
+.slider-number:focus-within{border-color:#d65a19;box-shadow:0 0 0 2px rgba(214,90,25,.1)}
+.slider-number input[type=number]{min-height:0;height:100%;width:64px!important;min-width:0;border:0!important;background:transparent!important;font-size:15px;font-weight:750;color:#3d3129;text-align:right;padding:6px 4px 6px 8px;font-variant-numeric:tabular-nums;outline:none}
+.slider-number input[type=number]:focus-visible{outline:none;box-shadow:none}
+.slider-number .slider-unit{font-size:11px;font-weight:700;color:#8c796b;white-space:nowrap}
+.slider-track-row{display:grid;grid-template-columns:35px minmax(0,1fr) 35px;gap:10px;align-items:center}
+.slider-step{min-width:35px;min-height:35px;width:35px;height:35px;padding:0;border:1px solid #e2d8cc;border-radius:10px;background:#fff;color:#9e451a;font-size:19px;line-height:1;box-shadow:none}
+.slider-step:hover:not(:disabled){background:#fff1e6;border-color:#e5a776;box-shadow:none}
+.slider-step:disabled{opacity:.3;cursor:default;box-shadow:none}
+.slider-track-row input[type=range]{width:100%;min-width:0;min-height:35px;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none;background:transparent;accent-color:#d45a18}
+.slider-track-row input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:linear-gradient(to right,#d85e1e 0%,#d85e1e var(--slider-progress,0%),#eee8df var(--slider-progress,0%),#eee8df 100%)}
+.slider-track-row input[type=range]::-moz-range-track{height:8px;border-radius:999px;background:linear-gradient(to right,#d85e1e 0%,#d85e1e var(--slider-progress,0%),#eee8df var(--slider-progress,0%),#eee8df 100%)}
+.slider-track-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border:4px solid #fff;border-radius:50%;background:#d85e1e;box-shadow:0 1px 6px rgba(84,46,24,.25);margin-top:-7px}
+.slider-track-row input[type=range]::-moz-range-thumb{width:15px;height:15px;border:4px solid #fff;border-radius:50%;background:#d85e1e;box-shadow:0 1px 6px rgba(84,46,24,.25)}
+.slider-track-row input[type=range]:focus-visible{outline:3px solid #e9894f;outline-offset:3px;border-radius:8px}
+.slider-limits{display:flex;justify-content:space-between;margin:1px 45px 0;font-size:10px;color:#897b6e;font-variant-numeric:tabular-nums}
+.slider-helper{font-size:11px;line-height:1.4;color:#787169;margin:10px 0 0;min-height:16px}
+.slider-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:21px;padding-top:19px;border-top:1px solid #ece7df}
+.slider-options h4{grid-column:1/-1;font-size:13px;margin:0}
+.slider-options>.muted{grid-column:1/-1;margin:-6px 0 1px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .design-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
 .toggle-tile{display:flex!important;align-items:center;gap:10px;border:1px solid #dfdbd2;background:#faf9f5;border-radius:10px;padding:12px;margin:0;cursor:pointer}
 .toggle-tile:has(input:checked){background:#fff6ed;border-color:#efc4a5}
@@ -110,9 +140,9 @@ a.preview-open{background:#fff;color:#282923;border-color:#fff;padding:8px 12px;
 .result b.good{color:#267034}
 .result b.bad{color:#a33a27}
 footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
-@media(max-width:1050px){.operations-grid{grid-template-columns:1fr}#design-panel-layout .design-group{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1050px){.operations-grid{grid-template-columns:1fr}}
 @media(max-width:780px){.wrap{width:calc(100% - 22px);padding-top:14px}.studio-heading{flex-wrap:wrap;padding:18px 15px}.studio-heading-actions{width:100%;justify-content:space-between}.design-controls{margin:0 9px 9px}.tool-panel{padding:14px 12px}.design-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.design-checks{grid-template-columns:1fr}.preview-shell{padding:10px}.preview-footnote{flex-wrap:wrap;align-items:flex-start}}
-@media(max-width:520px){.top{flex-wrap:wrap}.tool-tab{flex:1 1 125px}#design-panel-layout .design-group,.design-grid,.settings{grid-template-columns:1fr}.feed-row{grid-template-columns:1fr auto}.feed-row input[name=feed_label]{grid-column:1/-1}.preview-caption{gap:4px}.stat{min-width:98px}}
+@media(max-width:620px){.slider-grid,.slider-options{grid-template-columns:1fr}.slider-card{padding:12px}.slider-heading{gap:6px}.slider-helper{min-height:0}}\n@media(max-width:520px){.top{flex-wrap:wrap}.tool-tab{flex:1 1 125px}.design-grid,.settings{grid-template-columns:1fr}.feed-row{grid-template-columns:1fr auto}.feed-row input[name=feed_label]{grid-column:1/-1}.preview-caption{gap:4px}.stat{min-width:98px}}
 @media(prefers-reduced-motion:reduce){button{transition:none}}
 
 </style>
@@ -170,30 +200,57 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
         <div id="design-panel-layout" class="tool-panel" role="tabpanel" aria-labelledby="design-tab-layout" tabindex="0" hidden>
           <div class="design-group">
             <h3>Layout & Größen</h3>
-            {% set ranges = [
-              ('design_header_height','Header-Höhe',80,220,design.header_height,'px'),
-              ('design_footer_height','Footer-Höhe',45,130,design.footer_height,'px'),
-              ('design_logo_size','Logo-Größe',50,170,design.logo_size,'px'),
-              ('design_image_width','Bildbreite',30,70,design.image_width,'%'),
-              ('design_headline_size','Überschrift',20,110,design.headline_size,'px'),
-              ('design_summary_size','Beschreibung – Schriftgröße',12,60,design.summary_size,'px'),
-              ('design_summary_max_chars','Artikeltext – max. Zeichen',0,900,design.summary_max_chars,' Zeichen'),
-              ('design_clock_size','Uhrzeit',18,80,design.clock_size,'px'),
-              ('design_content_top','Abstand oben',0,120,design.content_top,'px'),
-              ('design_content_bottom','Abstand unten',0,120,design.content_bottom,'px'),
-              ('design_qr_size','QR-Code-Größe',80,220,design.qr_size,'px')
+            <p class="muted slider-intro">Am Regler ziehen, auf − / + tippen oder die Zahl direkt ändern. Änderungen erscheinen sofort in der TV-Vorschau und werden erst mit <strong>Design speichern</strong> veröffentlicht.</p>
+            {% set slider_groups = [
+              ('Kopfzeile', 'Logo, Uhrzeit und die Höhe des gelben Bereichs.', [
+                ('design_header_height','Header-Höhe',80,320,design.header_height,'px',5,'Wie hoch der obere Bereich ist.'),
+                ('design_logo_size','Logo-Größe',50,240,design.logo_size,'px',5,'Platz für das Logo im Header.'),
+                ('design_clock_size','Uhrzeit',18,80,design.clock_size,'px',2,'Schriftgröße der Uhr rechts oben.')
+              ]),
+              ('Nachrichtenbereich', 'Schrift, Bildanteil und vertikaler Abstand.', [
+                ('design_headline_size','Überschrift',20,110,design.headline_size,'px',2,'Größe der Artikelüberschrift.'),
+                ('design_summary_size','Beschreibung – Schriftgröße',12,60,design.summary_size,'px',2,'Größe des Nachrichtentextes.'),
+                ('design_summary_max_chars','Artikeltext – max. Zeichen',0,900,design.summary_max_chars,'Zeichen',25,'0 blendet den Text aus. Überschrift bleibt sichtbar.'),
+                ('design_image_width','Bildbreite',30,70,design.image_width,'%',2,'Anteil des Bildes im zweispaltigen Layout.'),
+                ('design_content_top','Abstand oben',0,120,design.content_top,'px',5,'Platz zwischen Header und Nachrichten.'),
+                ('design_content_bottom','Abstand unten',0,120,design.content_bottom,'px',5,'Platz zwischen Nachrichten und Footer.')
+              ]),
+              ('Fußzeile & QR-Code', 'Die Einblendungen im unteren Bereich.', [
+                ('design_footer_height','Footer-Höhe',45,130,design.footer_height,'px',5,'Höhe der unteren Leiste.'),
+                ('design_qr_size','QR-Kartengröße',80,220,design.qr_size,'px',5,'Skaliert Code und weiße Karte gemeinsam.')
+              ])
             ] %}
-            {% for id,label,minv,maxv,value,unit in ranges %}
-            <div class="design-field" style="margin-bottom:9px">
-              <label for="{{ id }}">{{ label }}</label>
-              <div class="range-row">
-                <input id="{{ id }}" name="{{ id }}" type="range" min="{{ minv }}" max="{{ maxv }}" value="{{ value }}" data-unit="{{ unit }}">
-                <input id="{{ id }}_number" type="number" min="{{ minv }}" max="{{ maxv }}" value="{{ value }}" aria-label="{{ label }} in {{ unit }}">
-                <span class="range-value" id="{{ id }}_value">{{ value }}{{ unit }}</span>
-              </div>
-            </div>
+            <div class="slider-sections">
+            {% for group_name,group_description,ranges in slider_groups %}
+              <section class="slider-section" aria-label="{{ group_name }}">
+                <div class="slider-section-heading"><h4>{{ group_name }}</h4><p>{{ group_description }}</p></div>
+                <div class="slider-grid">
+                {% for id,label,minv,maxv,value,unit,button_step,helper in ranges %}
+                  <div class="design-field slider-card">
+                    <div class="slider-heading">
+                      <label for="{{ id }}">{{ label }}</label>
+                      <div class="slider-number">
+                        <input id="{{ id }}_number" type="number" min="{{ minv }}" max="{{ maxv }}" step="1" value="{{ value }}" aria-label="{{ label }} als Zahl" inputmode="numeric">
+                        <span class="slider-unit" aria-hidden="true">{{ unit }}</span>
+                      </div>
+                    </div>
+                    <div class="slider-track-row">
+                      <button class="slider-step" type="button" data-target="{{ id }}" data-direction="-1" data-step="{{ button_step }}" aria-label="{{ label }} verringern" title="{{ label }} verringern">−</button>
+                      <input id="{{ id }}" name="{{ id }}" type="range" min="{{ minv }}" max="{{ maxv }}" step="1" value="{{ value }}" data-unit="{{ unit }}" style="--slider-progress:{{ (((value - minv) / (maxv - minv)) * 100)|round(1) }}%" aria-label="{{ label }}">
+                      <button class="slider-step" type="button" data-target="{{ id }}" data-direction="1" data-step="{{ button_step }}" aria-label="{{ label }} erhöhen" title="{{ label }} erhöhen">+</button>
+                    </div>
+                    <div class="slider-limits" aria-hidden="true"><span>{{ minv }} {{ unit }}</span><span>{{ maxv }} {{ unit }}</span></div>
+                    <p class="slider-helper">{{ helper }}</p>
+                    <output class="sr-only" id="{{ id }}_value" for="{{ id }}">{{ value }} {{ unit }}</output>
+                  </div>
+                {% endfor %}
+                </div>
+              </section>
             {% endfor %}
-            <p class="muted">Textlimit gilt für den vom RSS-Feed gelieferten Kurztext (max. 900 Zeichen). 0 = Beschreibung ausblenden. Die Überschrift bleibt sichtbar.</p>
+            </div>
+            <div class="slider-options">
+              <h4>Bild & Anordnung</h4>
+              <p class="muted">Hier bestimmst du, wie Bild, Artikeltext und QR-Code angeordnet werden.</p>
             <div class="design-field">
               <label for="design_image_fit">Artikelbild</label>
               <select id="design_image_fit" name="design_image_fit">
@@ -230,6 +287,7 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
                 <option value="overlay" {% if design.story_layout == 'overlay' %}selected{% endif %}>Bild vollflächig, Text darüber</option>
               </select>
               <div class="muted">Overlay füllt den mittleren Bereich; der Text liegt auf einer lesbaren Fläche über dem Bild.</div>
+            </div>
             </div>
           </div>
         </div>
@@ -466,9 +524,17 @@ function sendDesignPreview(){
 for(const range of document.querySelectorAll('#design-controls input[type="range"]')){
   const output=document.getElementById(range.id+"_value");
   const number=document.getElementById(range.id+"_number");
+  const card=range.closest(".slider-card");
+  const min=Number(range.min), max=Number(range.max);
+  const clamp=value=>Math.max(min,Math.min(max,Math.round(value)));
   const sync=()=>{
-    if(output) output.textContent=range.value+(range.dataset.unit||"");
+    const value=Number(range.value);
+    range.style.setProperty("--slider-progress",((value-min)/(max-min)*100)+"%");
+    if(output) output.textContent=range.value+" "+(range.dataset.unit||"");
     if(number) number.value=range.value;
+    if(card) for(const button of card.querySelectorAll(".slider-step")){
+      button.disabled=button.dataset.direction==="-1" ? value<=min : value>=max;
+    }
   };
   sync();
   range.addEventListener("input",sync);
@@ -477,13 +543,26 @@ for(const range of document.querySelectorAll('#design-controls input[type="range
       if(number.value==="") return;
       const requested=Number(number.value);
       if(!Number.isFinite(requested)) return;
-      range.value=String(Math.round(Math.max(Number(range.min),Math.min(Number(range.max),requested))));
-      if(output) output.textContent=range.value+(range.dataset.unit||"");
+      range.value=String(clamp(requested));
+      sync();
       sendDesignPreview();
       markDesignDirty();
     });
     number.addEventListener("change",sync);
   }
+}
+for(const button of document.querySelectorAll("#design-panel-layout .slider-step")){
+  button.addEventListener("click",()=>{
+    const range=document.getElementById(button.dataset.target);
+    if(!range) return;
+    const direction=Number(button.dataset.direction);
+    const step=Number(button.dataset.step)||1;
+    const value=Math.max(Number(range.min),Math.min(Number(range.max),Number(range.value)+direction*step));
+    if(value===Number(range.value)) return;
+    range.value=String(value);
+    range.dispatchEvent(new Event("input",{bubbles:true}));
+    range.focus({preventScroll:true});
+  });
 }
 if(controls){
   controls.addEventListener("input",()=>{sendDesignPreview();markDesignDirty();});
