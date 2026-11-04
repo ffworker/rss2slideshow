@@ -47,6 +47,36 @@ class AdminTests(unittest.TestCase):
                 self.assertIn(b"design_overlay_headline_color", response.data)
                 self.assertIn(b"design_font_family", response.data)
 
+    def test_live_preview_uses_kiosk_route_including_legacy_root_config(self):
+        # The old '/' setting may hit an unrelated proxy route and show a 404.
+        for configured in ("", "/"):
+            with self.subTest(configured=configured), patch.dict(
+                os.environ,
+                {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret",
+                 "ADMIN_KIOSK_PATH": configured},
+            ):
+                with main.app.test_client() as client:
+                    page = client.get("/admin", headers=auth_header())
+                    kiosk = client.get("/kiosk")
+                self.assertEqual(page.status_code, 200)
+                self.assertEqual(kiosk.status_code, 200)
+                markup = page.get_data(as_text=True)
+                self.assertIn('id="design-preview" class="preview-frame" src="/kiosk"', markup)
+                self.assertEqual(markup.count('href="/kiosk"'), 2)
+
+    def test_explicit_reverse_proxy_kiosk_path_remains_configurable(self):
+        with patch.dict(
+            os.environ,
+            {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret",
+             "ADMIN_KIOSK_PATH": "/display/kiosk"},
+        ):
+            with main.app.test_client() as client:
+                response = client.get("/admin", headers=auth_header())
+        self.assertEqual(response.status_code, 200)
+        markup = response.get_data(as_text=True)
+        self.assertIn('src="/display/kiosk"', markup)
+        self.assertEqual(markup.count('href="/display/kiosk"'), 2)
+
     def test_authenticated_admin_shows_failed_feed_names(self):
         with patch.dict(os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}), \
              patch.dict(main.snapshot, {"failed_sources": ["Regional"]}):
