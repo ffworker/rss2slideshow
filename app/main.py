@@ -247,9 +247,9 @@ def read_design_settings(base_brand=None):
             if custom.get("font_family") in DESIGN_FONT_PRESETS:
                 settings["font_family"] = custom["font_family"]
             for key, low, high in (
-                ("header_height", 80, 220),
+                ("header_height", 80, 320),
                 ("footer_height", 45, 130),
-                ("logo_size", 50, 170),
+                ("logo_size", 50, 240),
                 ("image_width", 30, 70),
                 ("headline_size", 20, 110),
                 ("summary_size", 12, 60),
@@ -302,9 +302,9 @@ def validate_design_form(form):
         "summary_color": _design_color(form.get("design_summary_color"), base["summary_color"]),
         "overlay_headline_color": _design_color(form.get("design_overlay_headline_color"), base["overlay_headline_color"]),
         "overlay_summary_color": _design_color(form.get("design_overlay_summary_color"), base["overlay_summary_color"]),
-        "header_height": _bounded_int(form.get("design_header_height"), base["header_height"], 80, 220),
+        "header_height": _bounded_int(form.get("design_header_height"), base["header_height"], 80, 320),
         "footer_height": _bounded_int(form.get("design_footer_height"), base["footer_height"], 45, 130),
-        "logo_size": _bounded_int(form.get("design_logo_size"), base["logo_size"], 50, 170),
+        "logo_size": _bounded_int(form.get("design_logo_size"), base["logo_size"], 50, 240),
         "image_width": _bounded_int(form.get("design_image_width"), base["image_width"], 30, 70),
         "headline_size": _bounded_int(form.get("design_headline_size"), base["headline_size"], 20, 110),
         "summary_size": _bounded_int(form.get("design_summary_size"), base["summary_size"], 12, 60),
