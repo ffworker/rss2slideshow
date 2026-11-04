@@ -42,8 +42,8 @@ class AdminTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertIn(b"RSS2Slideshow", response.data)
                 self.assertIn(b"RSS-Feeds", response.data)
-                self.assertIn(b"Grobe Vorschau", response.data)
-                self.assertIn("nicht maßstabsgetreu", response.get_data(as_text=True))
+                self.assertIn(b"TV-Vorschau", response.data)
+                self.assertIn("1920 × 1080", response.get_data(as_text=True))
                 self.assertIn(b"design_overlay_headline_color", response.data)
                 self.assertIn(b"design_font_family", response.data)
 
@@ -84,6 +84,9 @@ class AdminTests(unittest.TestCase):
             "design_show_clock", "design_show_source", "design_show_footer_names",
             "design_footer_names", "design_logo", "feeds", "slide_seconds",
             "max_articles", "refresh_minutes", "design-draft-status",
+            "design_clock_size", "design_content_top", "design_content_bottom",
+            "design_image_side", "design_qr_position", "design_qr_size",
+            "preview-viewport",
         ):
             self.assertIn(required_id, ids)
         actions = [attrs.get("value") for tag, attrs in elements
@@ -91,8 +94,8 @@ class AdminTests(unittest.TestCase):
         for action in ("save_design", "reset_design", "save_feeds",
                        "test_feeds", "save_settings", "refresh"):
             self.assertIn(action, actions)
-        self.assertIn("Grobe Vorschau", html)
-        self.assertIn("nicht maßstabsgetreu", html)
+        self.assertIn("TV-Vorschau", html)
+        self.assertIn("1920 × 1080", html)
         self.assertIn("activateDesignTab", html)
         self.assertIn("markDesignDirty", html)
         self.assertIn("aspect-ratio:16/9", html)
@@ -201,6 +204,12 @@ class AdminTests(unittest.TestCase):
                             "design_image_width": "60",
                             "design_headline_size": "98",
                             "design_summary_size": "48",
+                            "design_clock_size": "42",
+                            "design_content_top": "24",
+                            "design_content_bottom": "44",
+                            "design_qr_size": "170",
+                            "design_image_side": "right",
+                            "design_qr_position": "top-left",
                             "design_image_fit": "cover",
                             "design_story_layout": "overlay",
                             "design_show_clock": "on",
@@ -220,6 +229,12 @@ class AdminTests(unittest.TestCase):
                     self.assertEqual(saved["font_family"], "Verdana")
                     self.assertEqual(saved["headline_size"], 98)
                     self.assertEqual(saved["summary_size"], 48)
+                    self.assertEqual(saved["clock_size"], 42)
+                    self.assertEqual(saved["content_top"], 24)
+                    self.assertEqual(saved["content_bottom"], 44)
+                    self.assertEqual(saved["qr_size"], 170)
+                    self.assertEqual(saved["image_side"], "right")
+                    self.assertEqual(saved["qr_position"], "top-left")
                     self.assertEqual(saved["overlay_headline_color"], "#2563eb")
                     self.assertEqual(saved["overlay_summary_color"], "#ffffff")
                     self.assertEqual(saved["summary_color"], "#203040")
@@ -232,6 +247,9 @@ class AdminTests(unittest.TestCase):
                     self.assertEqual(api["brand_name"], "Example News")
                     self.assertEqual(api["headline_size"], 98)
                     self.assertEqual(api["summary_size"], 48)
+                    self.assertEqual(api["clock_size"], 42)
+                    self.assertEqual(api["qr_size"], 170)
+                    self.assertEqual(api["image_side"], "right")
                     self.assertEqual(api["font_family"], "Verdana")
                     self.assertEqual(api["overlay_headline_color"], "#2563eb")
                     self.assertTrue(api["logo_url"].startswith("/design-logo?v="))
