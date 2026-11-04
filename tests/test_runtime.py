@@ -1,5 +1,8 @@
 """Regression checks for the production WSGI server and guarded restart."""
 import importlib
+import re
+import shutil
+import subprocess
 import json
 import tempfile
 from pathlib import Path
@@ -81,6 +84,20 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(persisted["feed:regional"], "c")
         self.assertEqual(bad.status_code, 400)
         self.assertEqual(unavailable.status_code, 404)
+
+    def test_browser_scripts_are_parseable_javascript(self):
+        if not shutil.which("node"):
+            self.skipTest("Node.js is not available")
+        for filename in ("app/player.html", "app/templates/admin.html"):
+            with self.subTest(filename=filename):
+                page = (ROOT / filename).read_text(encoding="utf-8")
+                inline = re.search(r"<script>(.*?)</script>", page, re.DOTALL)
+                self.assertIsNotNone(inline)
+                result = subprocess.run(
+                    ["node", "--check", "--input-type=commonjs"],
+                    input=inline.group(1), capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_bistro_player_has_website_one_article_mode(self):
         player = (ROOT / "app/player.html").read_text(encoding="utf-8")
