@@ -153,6 +153,40 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(set(s["data-target"] for s in steppers), set(ranges))
         self.assertTrue(all(s.get("aria-label") for s in steppers))
 
+    def test_optional_focus_studio_uses_same_inputs_and_preview(self):
+        """Focus mode must not create a second form or iframe that could drift."""
+        with patch.dict(os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}):
+            with main.app.test_client() as client:
+                response = client.get("/admin", headers=auth_header())
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        dom = AdminStructureParser()
+        dom.feed(html)
+        studio_buttons = [
+            attrs for tag, attrs in dom.elements
+            if tag == "button" and attrs.get("id") == "studio-focus-toggle"
+        ]
+        self.assertEqual(len(studio_buttons), 1)
+        self.assertEqual(studio_buttons[0].get("type"), "button")
+        self.assertEqual(studio_buttons[0].get("aria-pressed"), "false")
+        self.assertEqual(studio_buttons[0].get("aria-controls"), "design-editor")
+        preview_iframes = [
+            attrs for tag, attrs in dom.elements
+            if tag == "iframe" and attrs.get("id") == "design-preview"
+        ]
+        self.assertEqual(len(preview_iframes), 1)
+        self.assertEqual(len([attrs for tag, attrs in dom.elements
+                              if tag == "form"]), 1)
+        self.assertIn('class="preview-zone-guide" aria-hidden="true"', html)
+        self.assertIn("studio-focus .preview-shell", html)
+        self.assertIn('activateDesignTab("layout")', html)
+        self.assertIn('event.key==="Escape"', html)
+        self.assertIn('type:"kiosk-design-preview"', html)
+        self.assertIn("requestAnimationFrame(sizeTvPreview)", html)
+        self.assertIn("pointerover", html)
+        self.assertIn("focusin", html)
+        self.assertIn("body.studio-focus-active{overflow:hidden}", html)
+
     def test_customer_can_save_feeds_and_get_a_backup(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(
             os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}

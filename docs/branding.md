@@ -67,3 +67,18 @@ Bei großen Logos die Header-Höhe mit anpassen und die Darstellung am
 physischen Bistro-TV prüfen; die 1920×1080-Vorschau ersetzt diesen Test nicht.
 Die Änderungen betreffen nur die UI-Einstellungen von RSS2Slideshow; weder
 Anthias Hub noch die bestehenden RSS-Feeds werden verändert.
+
+## Fokusmodus zur Bistro-TV-Abnahme
+
+Im **Design-Studio** kann die Kollegin über **Große Vorschau** die vorhandene
+1920×1080-TV-Vorschau und die bereits vorhandenen Regler **nebeneinander**
+anzeigen. Die Regler bleiben links sichtbar und scrollbar, die TV-Ansicht
+rechts. Beim Zeigen auf einen Regler wird der betroffene Bereich der
+Vorschau (Kopfzeile, Nachrichtenbereich oder Fußzeile) markiert.
+
+Mit **Zur normalen Ansicht** oder **Esc** geht es zurück. Alle Werte bleiben
+erhalten. Der Modus ist nur eine Ansicht, **kein zweiter Editor** und kein
+neuer Speicherweg: Erst **Design speichern** veröffentlicht Änderungen.
+RSS2Slideshow und Anthias-Playlist verhalten sich ansonsten unverändert.
+Bei schmalen Fenstern werden Vorschau und Regler platzsparend untereinander
+dargestellt.
