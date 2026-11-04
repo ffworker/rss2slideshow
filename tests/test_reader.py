@@ -93,7 +93,12 @@ class ReaderTests(unittest.TestCase):
         with main.app.test_client() as client:
             page = client.get('/kiosk').data.decode()
         self.assertIn('id="article-qr"', page)
-        self.assertIn('story.qr_url', page)
+        self.assertIn('displayedStory.qr_url', page)
+        self.assertIn('body.ui-hide-qr .article-qr', page)
+        self.assertIn('body.ui-design .article-qr-note', page)
+        self.assertIn('width:var(--ui-qr-size,135px)', page)
+        self.assertIn('refreshArticleDecorations()', page)
+        self.assertIn('summary_max_chars', page)
         self.assertIn('<strong>HIER</strong> zum ganzen Artikel', page)
         self.assertIn('function placeArticleQr(withPicture)', page)
         self.assertIn('placeArticleQr(true)', page)
