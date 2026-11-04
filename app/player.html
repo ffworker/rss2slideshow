@@ -612,9 +612,9 @@ function applySettings(data, remember=true) {
     const number = Number(value);
     return Number.isFinite(number) ? Math.max(low, Math.min(high, number)) : fallback;
   };
-  rootStyle.setProperty("--ui-header-height", bounded(data.header_height,80,220,150)+"px");
+  rootStyle.setProperty("--ui-header-height", bounded(data.header_height,80,320,150)+"px");
   rootStyle.setProperty("--ui-footer-height", bounded(data.footer_height,45,130,82)+"px");
-  rootStyle.setProperty("--ui-logo-size", bounded(data.logo_size,50,170,110)+"px");
+  rootStyle.setProperty("--ui-logo-size", bounded(data.logo_size,50,240,110)+"px");
   rootStyle.setProperty("--ui-image-width", bounded(data.image_width,30,70,56)+"%");
   rootStyle.setProperty("--ui-headline-size", bounded(data.headline_size,20,110,52)+"px");
   rootStyle.setProperty("--ui-summary-size", bounded(data.summary_size,12,60,28)+"px");
