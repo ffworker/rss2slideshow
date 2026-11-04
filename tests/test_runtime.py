@@ -100,6 +100,43 @@ class RuntimeTests(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_qr_positioning_sets_all_four_image_corners_and_resets_in_text(self):
+        """Test the actual extracted browser positioning function using Node."""
+        if not shutil.which("node"):
+            self.skipTest("Node.js is not available")
+        player = (ROOT / "app/player.html").read_text(encoding="utf-8")
+        match = re.search(
+            r"(function positionQrCard\\(qr, onPicture, requestedPosition\\) \\{.*?\\n\\})"
+            r"\\nfunction placeArticleQr\\(",
+            player, re.DOTALL,
+        )
+        self.assertIsNotNone(match)
+        checks = """
+const assert = require("node:assert/strict");
+const style = { removeProperty(key) { delete this[key]; } };
+const qr = { style };
+const cases = {
+  "top-left":     ["12px", "auto", "12px", "auto"],
+  "top-right":    ["12px", "auto", "auto", "12px"],
+  "bottom-left":  ["auto", "12px", "12px", "auto"],
+  "bottom-right": ["auto", "12px", "auto", "12px"],
+};
+for (const [place, expected] of Object.entries(cases)) {
+  positionQrCard(qr, true, place);
+  assert.deepEqual([style.top, style.bottom, style.left, style.right], expected, place);
+}
+positionQrCard(qr, true, "unknown");
+assert.deepEqual([style.top, style.bottom, style.left, style.right], cases["bottom-right"]);
+positionQrCard(qr, false, "text");
+assert.deepEqual([style.top, style.bottom, style.left, style.right],
+                 [undefined, undefined, undefined, undefined]);
+"""
+        result = subprocess.run(
+            ["node", "-e", match.group(1) + checks],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_bistro_player_has_website_one_article_mode(self):
         player = (ROOT / "app/player.html").read_text(encoding="utf-8")
         self.assertIn('playlistParams.get("playlist") === "1"', player)
