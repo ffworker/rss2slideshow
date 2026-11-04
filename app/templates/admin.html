@@ -123,6 +123,8 @@ body.studio-focus-active{overflow:hidden}
 .studio-focus .preview-viewport{flex:0 0 auto;width:min(100%,calc((100dvh - 205px) * 16 / 9));box-shadow:0 8px 32px rgba(0,0,0,.22)}
 .studio-focus .preview-footnote{gap:10px}
 .studio-focus .preview-footnote span{max-width:460px}
+.focus-studio-hint{display:none;color:#ffcc9f;font-size:11px}
+.studio-focus .focus-studio-hint{display:inline}
 .preview-zone-guide{display:none;position:absolute;z-index:3;left:0;width:100%;box-shadow:inset 0 0 0 3px rgba(255,135,43,.98);background:rgba(240,128,25,.075);pointer-events:none}
 .preview-zone-guide span{position:absolute;top:7px;right:7px;padding:5px 8px;border-radius:5px;background:rgba(35,31,25,.9);color:#fff;font:700 12px Arial,Helvetica,sans-serif}
 .studio-focus .preview-viewport[data-zone="header"] .preview-zone-guide{display:block;top:0;height:calc(var(--studio-header-height,150px) * var(--preview-scale,1))}
@@ -369,7 +371,7 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
         </div>
       </div>
       <div class="preview-shell">
-        <div class="preview-bar"><div class="preview-caption"><strong>TV-Vorschau</strong><span>1920 × 1080 (16:9), proportional verkleinert</span></div><a class="button preview-open" href="{{ kiosk_path }}" target="_blank" rel="noopener">Echten Kiosk öffnen ↗</a></div>
+        <div class="preview-bar"><div class="preview-caption"><strong>TV-Vorschau</strong><span>1920 × 1080 (16:9), proportional verkleinert</span><span class="focus-studio-hint">Über Regler fahren oder anklicken: betroffener TV-Bereich wird markiert.</span></div><a class="button preview-open" href="{{ kiosk_path }}" target="_blank" rel="noopener">Echten Kiosk öffnen ↗</a></div>
         <div id="preview-viewport" class="preview-viewport"><iframe id="design-preview" class="preview-frame" src="{{ kiosk_path }}" title="Kiosk-TV-Designvorschau in 1920 mal 1080"></iframe><div class="preview-zone-guide" aria-hidden="true"><span id="preview-zone-label"></span></div></div>
         <div class="preview-footnote">
           <span>Die Vorschau simuliert 1920 × 1080. Design speichern und anschließend am Bistro-TV prüfen (Browser-Zoom und Overscan können abweichen).</span>
