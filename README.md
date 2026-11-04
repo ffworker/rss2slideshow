@@ -32,7 +32,7 @@ cp content/feeds.example.txt content/feeds.txt
 docker compose up -d --build
 ```
 
-By default the service binds to `127.0.0.1:8085`. Open `/` for the kiosk and `/admin` for the editor. Basic Auth is for trusted environments; use HTTPS and proper access restrictions before exposing either UI over a network.
+By default the service binds to `127.0.0.1:8085`. Open `/` or `/kiosk` for the kiosk and `/admin` for the editor. The embedded preview uses `/kiosk` by default, including when upgrading from `ADMIN_KIOSK_PATH=/`. Set a custom `ADMIN_KIOSK_PATH` only when required by a reverse proxy. Basic Auth is for trusted environments; use HTTPS and proper access restrictions before exposing either UI over a network.
 
 ## Your configuration stays yours
 
