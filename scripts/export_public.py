@@ -18,7 +18,7 @@ ROOT_FILES = {
 }
 DOC_FILES = {
     "docs/README.md", "docs/deployment.md",
-    "docs/branding.md", "docs/update-safety.md",
+    "docs/branding.md", "docs/update-safety.md", "docs/anthias-playlist.md",
 }
 SOURCE_DIRS = ("app", "addons", "scripts", "tests", ".github/workflows")
 ALLOWED_EXTENSIONS = {".py", ".html", ".md", ".txt", ".yaml", ".yml"}

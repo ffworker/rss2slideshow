@@ -363,6 +363,38 @@ body.ui-design .story.overlay-layout.no-picture .copy { width:100%; padding:0; }
   body.ui-design .story.overlay-layout .copy { width:100%; align-self:end; padding:20px; }
   body.ui-design .story.overlay-layout .visual::after { background:linear-gradient(0deg,rgba(0,0,0,.78),rgba(0,0,0,.12) 75%); }
 }
+/* Bistro TV design controls: scoped to the editable design, leaving legacy profiles untouched. */
+body.ui-design main {
+  padding-top:var(--ui-content-top,36px) !important;
+  padding-bottom:var(--ui-content-bottom,56px) !important;
+}
+body.ui-design #time { font-size:var(--ui-clock-size,36px) !important; }
+body.ui-design .story:not(.overlay-layout) { align-items:stretch; }
+body.ui-design .story:not(.overlay-layout) .visual { height:100% !important; max-height:100% !important; }
+body.ui-design .story:not(.overlay-layout) .copy {
+  height:100%; max-height:100%; overflow:hidden; min-height:0;
+}
+body.ui-design h1,
+body.ui-design h1.long-title {
+  font-size:min(var(--ui-headline-size,52px),var(--ui-fit-headline-size,999px)) !important;
+}
+body.ui-design #summary,
+body.ui-design #summary.long-summary {
+  font-size:min(var(--ui-summary-size,28px),var(--ui-fit-summary-size,999px)) !important;
+}
+body.ui-design .story.image-right:not(.overlay-layout) .visual { grid-column:2; grid-row:1; }
+body.ui-design .story.image-right:not(.overlay-layout) .copy { grid-column:1; grid-row:1; }
+body.ui-design .story.no-picture .copy { grid-column:1/-1 !important; grid-row:auto !important; }
+body.ui-design .article-qr img { width:var(--ui-qr-size,135px); height:var(--ui-qr-size,135px); }
+body.ui-design .visual .article-qr { left:auto;right:12px;top:auto;bottom:12px; }
+body.ui-design .story.qr-bottom-left .visual .article-qr { left:12px;right:auto;top:auto;bottom:12px; }
+body.ui-design .story.qr-top-right .visual .article-qr { left:auto;right:12px;top:12px;bottom:auto; }
+body.ui-design .story.qr-top-left .visual .article-qr { left:12px;right:auto;top:12px;bottom:auto; }
+@media(max-width:680px) and (orientation:portrait) {
+  body.ui-design .story.image-right:not(.overlay-layout) .visual { grid-column:1;grid-row:1; }
+  body.ui-design .story.image-right:not(.overlay-layout) .copy { grid-column:1;grid-row:2; }
+  body.ui-design .story.no-picture .copy {grid-row:1 !important;}
+}
 body.ui-hide-clock .clock { display:none !important; }
 body.ui-hide-source #source,
 body.ui-hide-source #header-source { display:none !important; }
@@ -403,6 +435,11 @@ let articles = [], index = 0, displayedId = "", seconds = 20, timer = null;
 let zone = "Europe/Berlin", syncTime = null, syncAt = 0, brand = "RSS2Slideshow";
 let currentFontUrl = "", currentFontName = "", fontRequest = 0, photoRequest = 0;
 let sourceInHeader = false, serverSettings = null, previewDesign = null;
+const playlistParams = new URLSearchParams(location.search);
+const playlistMode = playlistParams.get("playlist") === "1";
+const playlistFeed = playlistParams.get("feed");
+let playlistSelectionReady = false, playlistSelectionPending = false, playlistLastSelection = -Infinity;
+let fitFrame = 0;
 
 function now() {
   return syncTime === null ? new Date() : new Date(syncTime + performance.now() - syncAt);
@@ -431,9 +468,30 @@ function setImage(id, url) {
   image.src = url;
 }
 function placeArticleQr(withPicture) {
-  const target = el(withPicture ? "visual" : "copy");
+  const chosen = previewDesign || serverSettings || {};
+  const target = el(withPicture && chosen.qr_position !== "text" ? "visual" : "copy");
   const qr = el("article-qr");
   if (qr.parentElement !== target) target.appendChild(qr);
+}
+function fitArticleCopy() {
+  if (!document.body.classList.contains("ui-design")) return;
+  const copy=el("copy"), root=document.documentElement.style;
+  root.removeProperty("--ui-fit-headline-size");
+  root.removeProperty("--ui-fit-summary-size");
+  if (copy.clientHeight < 60) return;
+  const settings={...(serverSettings||{}),...(previewDesign||{})};
+  const headline=Number(settings.headline_size)||52;
+  const summary=Number(settings.summary_size)||28;
+  // Text must never grow beneath the footer or beyond the image on shorter TVs.
+  for (let i=0; i<20 && copy.scrollHeight>copy.clientHeight+1; i++) {
+    const factor=Math.pow(0.94,i+1);
+    root.setProperty("--ui-fit-headline-size",Math.max(20,Math.round(headline*factor))+"px");
+    root.setProperty("--ui-fit-summary-size",Math.max(12,Math.round(summary*factor))+"px");
+  }
+}
+function requestTextFit() {
+  if (fitFrame) cancelAnimationFrame(fitFrame);
+  fitFrame=requestAnimationFrame(fitArticleCopy);
 }
 function show() {
   if (!articles.length) return;
@@ -474,18 +532,21 @@ function show() {
   image.style.display = "none";
   image.removeAttribute("src");
   el("story").classList.add("no-picture");
+  requestTextFit();
   if (story.image && /^https:\/\//i.test(story.image)) {
     image.onload = () => {
       if (request !== photoRequest) return;
       image.style.display = "block";
       el("story").classList.remove("no-picture");
       placeArticleQr(true);
+      requestTextFit();
     };
     image.onerror = () => {
       if (request !== photoRequest) return;
       image.style.display = "none";
       el("story").classList.add("no-picture");
       placeArticleQr(false);
+      requestTextFit();
     };
     image.src = story.image;
   }
@@ -503,6 +564,10 @@ function applySettings(data, remember=true) {
   document.body.classList.toggle("featured-layout", featuredLayout);
   document.body.classList.toggle("ui-design", data.design_enabled === true);
   el("story").classList.toggle("overlay-layout", data.story_layout === "overlay");
+  const storyElement=el("story");
+  storyElement.classList.toggle("image-right", data.image_side === "right");
+  for (const placement of ("bottom-left","top-right","top-left"))
+    storyElement.classList.toggle("qr-"+placement,data.qr_position === placement);
   document.body.classList.toggle("ui-hide-clock", data.show_clock === false);
   document.body.classList.toggle("ui-hide-source", data.show_source === false);
   const rootStyle = document.documentElement.style;
@@ -516,6 +581,12 @@ function applySettings(data, remember=true) {
   rootStyle.setProperty("--ui-image-width", bounded(data.image_width,30,70,56)+"%");
   rootStyle.setProperty("--ui-headline-size", bounded(data.headline_size,20,110,52)+"px");
   rootStyle.setProperty("--ui-summary-size", bounded(data.summary_size,12,60,28)+"px");
+  rootStyle.setProperty("--ui-clock-size", bounded(data.clock_size,18,80,36)+"px");
+  rootStyle.setProperty("--ui-content-top", bounded(data.content_top,0,120,36)+"px");
+  rootStyle.setProperty("--ui-content-bottom", bounded(data.content_bottom,0,120,56)+"px");
+  rootStyle.setProperty("--ui-qr-size", bounded(data.qr_size,80,220,135)+"px");
+  placeArticleQr(!storyElement.classList.contains("no-picture"));
+  requestTextFit();
   rootStyle.setProperty("--ui-image-fit", data.image_fit === "cover" ? "cover" : "contain");
   document.body.classList.toggle("source-in-header", sourceInHeader);
   document.body.classList.toggle("hide-group-logo", data.show_group_logo === false);
@@ -601,6 +672,24 @@ function applySettings(data, remember=true) {
   }
   clock();
 }
+async function choosePlaylistArticle() {
+  if (playlistSelectionPending) return;
+  playlistSelectionPending=true;
+  try {
+    const query=playlistFeed === null ? "" : "?feed="+encodeURIComponent(playlistFeed);
+    const response=await fetch("/api/playlist-next"+query,{cache:"no-store"});
+    if (!response.ok) throw Error("playlist next HTTP "+response.status);
+    const data=await response.json();
+    if (!data.article) throw Error("playlist has no article");
+    articles=[data.article];
+    index=0;
+    playlistSelectionReady=true;
+    playlistLastSelection=performance.now();
+    show();
+  } finally {
+    playlistSelectionPending=false;
+  }
+}
 async function update() {
   try {
     const response = await fetch("/api/articles",{cache:"no-store"});
@@ -610,6 +699,11 @@ async function update() {
     // Keep unsaved iframe edits visible across the normal 30-second RSS refresh.
     if (previewDesign) applySettings({...data, ...previewDesign, design_enabled:true}, false);
     const incoming = Array.isArray(data.articles) ? data.articles : [];
+    if (playlistMode) {
+      // Anthias owns the asset duration; only advance when the web asset enters.
+      if (!playlistSelectionReady) await choosePlaylistArticle();
+      return;
+    }
     if (!incoming.length) {
       articles = [];
       displayedId = "";
@@ -636,6 +730,14 @@ window.addEventListener("message", event => {
   previewDesign = event.data.design && typeof event.data.design === "object" ? event.data.design : {};
   applySettings({...serverSettings, ...previewDesign, design_enabled:true}, false);
 });
+document.addEventListener("visibilitychange",()=>{
+  // A surviving Anthias webview may be hidden rather than destroyed between assets.
+  if (playlistMode && !document.hidden && playlistSelectionReady &&
+      performance.now()-playlistLastSelection>2000) {
+    choosePlaylistArticle().catch(error=>console.warn("playlist reentry failed",error));
+  }
+});
+window.addEventListener("resize",requestTextFit);
 
 clock();
 update();

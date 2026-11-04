@@ -73,7 +73,8 @@ button.secondary,a.secondary{background:#fff;color:var(--ink);border-color:#d3cf
 .preview-caption strong{font-size:14px}
 .preview-caption span{font-size:12px;color:#c8c7c1}
 a.preview-open{background:#fff;color:#282923;border-color:#fff;padding:8px 12px;font-size:12px}
-.preview-frame{display:block;width:100%;aspect-ratio:16/9;border:0;background:#fff;border-radius:7px}
+.preview-viewport{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:#fff;border-radius:7px}
+.preview-frame{display:block;position:absolute;top:0;left:0;width:1920px;height:1080px;border:0;background:#fff;transform-origin:top left;transform:scale(var(--preview-scale,1))}
 .preview-footnote{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:13px 2px 0}
 .preview-footnote span{color:#d6d4cb;font-size:12px;line-height:1.5;max-width:900px}
 .preview-footnote strong{color:#fff}
@@ -175,7 +176,11 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
               ('design_logo_size','Logo-Größe',50,170,design.logo_size,'px'),
               ('design_image_width','Bildbreite',30,70,design.image_width,'%'),
               ('design_headline_size','Überschrift',20,110,design.headline_size,'px'),
-              ('design_summary_size','Beschreibung',12,60,design.summary_size,'px')
+              ('design_summary_size','Beschreibung',12,60,design.summary_size,'px'),
+              ('design_clock_size','Uhrzeit',18,80,design.clock_size,'px'),
+              ('design_content_top','Abstand oben',0,120,design.content_top,'px'),
+              ('design_content_bottom','Abstand unten',0,120,design.content_bottom,'px'),
+              ('design_qr_size','QR-Code-Größe',80,220,design.qr_size,'px')
             ] %}
             {% for id,label,minv,maxv,value,unit in ranges %}
             <div class="design-field" style="margin-bottom:9px">
@@ -192,6 +197,25 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
               <select id="design_image_fit" name="design_image_fit">
                 <option value="contain" {% if design.image_fit == 'contain' %}selected{% endif %}>Ganzes Bild zeigen (contain)</option>
                 <option value="cover" {% if design.image_fit == 'cover' %}selected{% endif %}>Fläche füllen / beschneiden (cover)</option>
+              </select>
+            </div>
+            <div class="design-field" style="margin-top:10px">
+              <label for="design_image_side">Bildposition (nebeneinander)</label>
+              <select id="design_image_side" name="design_image_side">
+                <option value="left" {% if design.image_side == 'left' %}selected{% endif %}>Bild links / Text rechts</option>
+                <option value="right" {% if design.image_side == 'right' %}selected{% endif %}>Text links / Bild rechts</option>
+              </select>
+            </div>
+            <div class="design-field" style="margin-top:10px">
+              <label for="design_qr_position">QR-Code-Position</label>
+              <select id="design_qr_position" name="design_qr_position">
+                {% for value, label in [
+                  ('bottom-right','Unten rechts auf Bild'), ('bottom-left','Unten links auf Bild'),
+                  ('top-right','Oben rechts auf Bild'), ('top-left','Oben links auf Bild'),
+                  ('text','Unter dem Artikeltext')
+                ] %}
+                <option value="{{ value }}" {% if design.qr_position == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
               </select>
             </div>
             <div class="design-field" style="margin-top:10px">
@@ -246,10 +270,10 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
         </div>
       </div>
       <div class="preview-shell">
-        <div class="preview-bar"><div class="preview-caption"><strong>Grobe Vorschau</strong><span>16:9 – nicht maßstabsgetreu</span></div><a class="button preview-open" href="{{ kiosk_path }}" target="_blank" rel="noopener">Echten Kiosk öffnen ↗</a></div>
-        <iframe id="design-preview" class="preview-frame" src="{{ kiosk_path }}" title="Grobe Kiosk-Designvorschau"></iframe>
+        <div class="preview-bar"><div class="preview-caption"><strong>TV-Vorschau</strong><span>1920 × 1080 (16:9), proportional verkleinert</span></div><a class="button preview-open" href="{{ kiosk_path }}" target="_blank" rel="noopener">Echten Kiosk öffnen ↗</a></div>
+        <div id="preview-viewport" class="preview-viewport"><iframe id="design-preview" class="preview-frame" src="{{ kiosk_path }}" title="Kiosk-TV-Designvorschau in 1920 mal 1080"></iframe></div>
         <div class="preview-footnote">
-          <span>Die Vorschau ist nur eine Orientierung. Design speichern, Kiosk im eigenen Tab mit <strong>Strg+F5</strong> neu laden und den echten Anzeigegerät prüfen.</span>
+          <span>Die Vorschau simuliert 1920 × 1080. Design speichern und anschließend am Bistro-TV prüfen (Browser-Zoom und Overscan können abweichen).</span>
           <div class="preview-footnote-actions"><button class="secondary reset-action" type="submit" name="action" value="reset_design" formnovalidate onclick="return confirm('Design wirklich auf den hinterlegten Kundenstandard zurücksetzen?')">Zurücksetzen</button><button class="primary" type="submit" name="action" value="save_design">Design speichern</button></div>
         </div>
       </div>
@@ -382,6 +406,14 @@ function markDesignDirty(){
 }
 
 const preview=document.getElementById("design-preview");
+const previewViewport=document.getElementById("preview-viewport");
+function sizeTvPreview(){
+  if (!previewViewport) return;
+  previewViewport.style.setProperty("--preview-scale", String(previewViewport.clientWidth/1920));
+}
+sizeTvPreview();
+if (previewViewport && typeof ResizeObserver!=="undefined") new ResizeObserver(sizeTvPreview).observe(previewViewport);
+else window.addEventListener("resize",sizeTvPreview);
 const controls=document.getElementById("design-controls");
 let previewLogo="";
 function designPayload(){
@@ -404,6 +436,12 @@ function designPayload(){
     image_width:Number(document.getElementById("design_image_width").value),
     headline_size:Number(document.getElementById("design_headline_size").value),
     summary_size:Number(document.getElementById("design_summary_size").value),
+    clock_size:Number(document.getElementById("design_clock_size").value),
+    content_top:Number(document.getElementById("design_content_top").value),
+    content_bottom:Number(document.getElementById("design_content_bottom").value),
+    qr_size:Number(document.getElementById("design_qr_size").value),
+    image_side:document.getElementById("design_image_side").value,
+    qr_position:document.getElementById("design_qr_position").value,
     image_fit:document.getElementById("design_image_fit").value,
     story_layout:document.getElementById("design_story_layout").value,
     show_clock:document.getElementById("design_show_clock").checked,

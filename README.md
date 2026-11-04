@@ -13,6 +13,7 @@ A personal project by **Bytegeist / ffworker**, created in my **own free time, o
 - Multiple RSS feeds, configurable article rotation and refresh intervals
 - Browser-based 16:9 display with optional images, article QR codes and clock
 - Admin editor for RSS feeds, typography, layout, colors and uploaded logos
+- Optional Anthias website mode: one rotating RSS article per playlist visit, with per-asset duration
 - Optional JPEG output for older slideshow players
 - Docker Compose deployment with persistent local settings
 - Gunicorn HTTP runtime (one worker to preserve the in-memory RSS refresh cache)
@@ -44,11 +45,12 @@ Runtime settings are kept out of Git and the Docker image:
 | `content/ui-settings.yaml` | Design editor changes |
 | `content/admin-settings.yaml` | Display settings |
 | `content/feeds.txt` | Your RSS feeds |
+| `content/playlist-state.json` | Last article displayed per Anthias feed (generated at runtime) |
 | `config.yaml`, `.env` | Deployment settings and secrets |
 
 Use `python3 scripts/safe_update.py check` and `python3 scripts/safe_update.py update` for manual upgrades with a backup and configuration drift checks. There is no automatic deployment. The container uses a bounded in-container HTTP healthcheck; a healthy response is not proof that RSS content or browser rendering is correct.
 
-See [Deployment](docs/deployment.md), [Branding](docs/branding.md), [Update safety](docs/update-safety.md).
+See [Deployment](docs/deployment.md), [Branding](docs/branding.md), [Anthias website playlist integration](docs/anthias-playlist.md), [Update safety](docs/update-safety.md).
 
 ## Tests
 
