@@ -221,11 +221,13 @@ def read_design_settings(base_brand=None):
         "content_top": 36,
         "content_bottom": 56,
         "qr_size": 135,
+        "summary_max_chars": 900,
         "image_side": "left",
         "qr_position": "bottom-right",
         "image_fit": "contain",
         "story_layout": "split",
         "show_clock": True,
+        "show_qr": True,
         "show_source": True,
         "show_footer_names": True,
         "footer_names": list(base.get("footer_names") or [])[:6],
@@ -255,6 +257,7 @@ def read_design_settings(base_brand=None):
                 ("content_top", 0, 120),
                 ("content_bottom", 0, 120),
                 ("qr_size", 80, 220),
+                ("summary_max_chars", 0, 900),
             ):
                 settings[key] = _bounded_int(custom.get(key), settings[key], low, high)
             settings["image_fit"] = "cover" if custom.get("image_fit") == "cover" else "contain"
@@ -263,7 +266,7 @@ def read_design_settings(base_brand=None):
             settings["qr_position"] = custom.get("qr_position") if custom.get("qr_position") in (
                 "bottom-right", "bottom-left", "top-right", "top-left", "text"
             ) else "bottom-right"
-            for key in ("show_clock", "show_source", "show_footer_names"):
+            for key in ("show_clock", "show_qr", "show_source", "show_footer_names"):
                 settings[key] = _design_bool(custom.get(key), settings[key])
             names = custom.get("footer_names")
             if isinstance(names, list):
@@ -309,6 +312,7 @@ def validate_design_form(form):
         "content_top": _bounded_int(form.get("design_content_top"), base["content_top"], 0, 120),
         "content_bottom": _bounded_int(form.get("design_content_bottom"), base["content_bottom"], 0, 120),
         "qr_size": _bounded_int(form.get("design_qr_size"), base["qr_size"], 80, 220),
+        "summary_max_chars": _bounded_int(form.get("design_summary_max_chars"), base["summary_max_chars"], 0, 900),
         "image_side": "right" if form.get("design_image_side") == "right" else "left",
         "qr_position": form.get("design_qr_position") if form.get("design_qr_position") in (
             "bottom-right", "bottom-left", "top-right", "top-left", "text"
@@ -316,6 +320,7 @@ def validate_design_form(form):
         "image_fit": "cover" if form.get("design_image_fit") == "cover" else "contain",
         "story_layout": "overlay" if form.get("design_story_layout") == "overlay" else "split",
         "show_clock": form.get("design_show_clock") == "on",
+        "show_qr": form.get("design_show_qr") == "on",
         "show_source": form.get("design_show_source") == "on",
         "show_footer_names": form.get("design_show_footer_names") == "on",
     }

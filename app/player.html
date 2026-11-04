@@ -385,7 +385,20 @@ body.ui-design #summary.long-summary {
 body.ui-design .story.image-right:not(.overlay-layout) .visual { grid-column:2; grid-row:1; }
 body.ui-design .story.image-right:not(.overlay-layout) .copy { grid-column:1; grid-row:1; }
 body.ui-design .story.no-picture .copy { grid-column:1/-1 !important; grid-row:auto !important; }
+/* Size the entire white QR card, not just the QR image. Keep the caption inside its width. */
+body.ui-design .article-qr {
+  padding:clamp(2px,calc(var(--ui-qr-size,135px) * .035),8px);
+  gap:clamp(2px,calc(var(--ui-qr-size,135px) * .025),5px);
+  max-width:calc(var(--ui-qr-size,135px) + 16px);
+}
 body.ui-design .article-qr img { width:var(--ui-qr-size,135px); height:var(--ui-qr-size,135px); }
+body.ui-design .article-qr-note {
+  width:var(--ui-qr-size,135px);
+  max-width:100%;
+  font-size:clamp(7px,calc(var(--ui-qr-size,135px) * .075),15px);
+  white-space:normal;
+  overflow-wrap:break-word;
+}
 body.ui-design .visual .article-qr { left:auto;right:12px;top:auto;bottom:12px; }
 body.ui-design .story.qr-bottom-left .visual .article-qr { left:12px;right:auto;top:auto;bottom:12px; }
 body.ui-design .story.qr-top-right .visual .article-qr { left:auto;right:12px;top:12px;bottom:auto; }
@@ -396,6 +409,8 @@ body.ui-design .story.qr-top-left .visual .article-qr { left:12px;right:auto;top
   body.ui-design .story.no-picture .copy {grid-row:1 !important;}
 }
 body.ui-hide-clock .clock { display:none !important; }
+body.ui-hide-qr .article-qr { display:none !important; }
+.story.hide-summary #summary { display:none !important; }
 body.ui-hide-source #source,
 body.ui-hide-source #header-source { display:none !important; }
 
@@ -434,7 +449,8 @@ const el = id => document.getElementById(id);
 let articles = [], index = 0, displayedId = "", seconds = 20, timer = null;
 let zone = "Europe/Berlin", syncTime = null, syncAt = 0, brand = "RSS2Slideshow";
 let currentFontUrl = "", currentFontName = "", fontRequest = 0, photoRequest = 0;
-let sourceInHeader = false, serverSettings = null, previewDesign = null;
+let sourceInHeader = false, serverSettings = null, previewDesign = null, activeSettings = null;
+let displayedStory = null;
 const playlistParams = new URLSearchParams(location.search);
 const playlistMode = playlistParams.get("playlist") === "1";
 const playlistFeed = playlistParams.get("feed");
@@ -468,7 +484,7 @@ function setImage(id, url) {
   image.src = url;
 }
 function placeArticleQr(withPicture) {
-  const chosen = previewDesign || serverSettings || {};
+  const chosen = activeSettings || {};
   const target = el(withPicture && chosen.qr_position !== "text" ? "visual" : "copy");
   const qr = el("article-qr");
   if (qr.parentElement !== target) target.appendChild(qr);
@@ -493,12 +509,34 @@ function requestTextFit() {
   if (fitFrame) cancelAnimationFrame(fitFrame);
   fitFrame=requestAnimationFrame(fitArticleCopy);
 }
+function refreshArticleDecorations() {
+  if (!displayedStory) return;
+  const options = activeSettings || {};
+  const requested = Number(options.summary_max_chars);
+  const limit = Number.isFinite(requested) ? Math.max(0,Math.min(900,Math.trunc(requested))) : 900;
+  const chars = Array.from(String(displayedStory.summary || ""));
+  let visible = chars.join("");
+  if (limit === 0) visible = "";
+  else if (chars.length > limit) {
+    visible = (limit === 1 ? "" : chars.slice(0,limit-1).join("").trimEnd()) + "…";
+  }
+  el("summary").textContent = visible;
+  el("story").classList.toggle("hide-summary", !visible);
+  el("summary").classList.toggle("long-summary",visible.length > 420);
+
+  const showQr = options.show_qr !== false;
+  document.body.classList.toggle("ui-hide-qr",!showQr);
+  setImage("article-qr-image", showQr ? (displayedStory.qr_url || "") : "");
+  placeArticleQr(!el("story").classList.contains("no-picture"));
+  requestTextFit();
+}
 function show() {
   if (!articles.length) return;
   placeArticleQr(false);
   const story = articles[index % articles.length];
   index = (index + 1) % articles.length;
   displayedId = story.id;
+  displayedStory = story;
   const sourceName = story.source || "RSS";
   el("source").textContent = sourceName;
   if (sourceInHeader) {
@@ -509,11 +547,9 @@ function show() {
     el("header-source").textContent = "";
   }
   el("headline").textContent = story.title || "";
-  el("summary").textContent = story.summary || "";
-  setImage("article-qr-image", story.qr_url || "");
+  refreshArticleDecorations();
   // Keep very long feed titles/abstracts inside the TV's available height.
   el("headline").classList.toggle("long-title", (story.title || "").length > 110);
-  el("summary").classList.toggle("long-summary", (story.summary || "").length > 420);
   el("footer").textContent = brand + "  ·  " + (story.source || "RSS");
   el("counter").textContent = String(((index - 1 + articles.length) % articles.length) + 1).padStart(2,"0") +
     " / " + String(articles.length).padStart(2,"0");
@@ -553,6 +589,7 @@ function show() {
 }
 function applySettings(data, remember=true) {
   if (remember) serverSettings = data;
+  activeSettings = data;
   zone = data.timezone || zone;
   syncTime = Number(data.server_time_ms);
   syncAt = performance.now();
@@ -585,7 +622,8 @@ function applySettings(data, remember=true) {
   rootStyle.setProperty("--ui-content-top", bounded(data.content_top,0,120,36)+"px");
   rootStyle.setProperty("--ui-content-bottom", bounded(data.content_bottom,0,120,56)+"px");
   rootStyle.setProperty("--ui-qr-size", bounded(data.qr_size,80,220,135)+"px");
-  placeArticleQr(!storyElement.classList.contains("no-picture"));
+  if (displayedStory) refreshArticleDecorations();
+  else document.body.classList.toggle("ui-hide-qr", data.show_qr === false);
   requestTextFit();
   rootStyle.setProperty("--ui-image-fit", data.image_fit === "cover" ? "cover" : "contain");
   document.body.classList.toggle("source-in-header", sourceInHeader);
@@ -707,6 +745,7 @@ async function update() {
     if (!incoming.length) {
       articles = [];
       displayedId = "";
+      displayedStory = null;
       el("headline").textContent = "Warte auf RSS-Nachrichten …";
       el("summary").textContent = "";
       el("counter").textContent = "";

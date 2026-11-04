@@ -176,7 +176,8 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
               ('design_logo_size','Logo-Größe',50,170,design.logo_size,'px'),
               ('design_image_width','Bildbreite',30,70,design.image_width,'%'),
               ('design_headline_size','Überschrift',20,110,design.headline_size,'px'),
-              ('design_summary_size','Beschreibung',12,60,design.summary_size,'px'),
+              ('design_summary_size','Beschreibung – Schriftgröße',12,60,design.summary_size,'px'),
+              ('design_summary_max_chars','Artikeltext – max. Zeichen',0,900,design.summary_max_chars,' Zeichen'),
               ('design_clock_size','Uhrzeit',18,80,design.clock_size,'px'),
               ('design_content_top','Abstand oben',0,120,design.content_top,'px'),
               ('design_content_bottom','Abstand unten',0,120,design.content_bottom,'px'),
@@ -192,6 +193,7 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
               </div>
             </div>
             {% endfor %}
+            <p class="muted">Textlimit gilt für den vom RSS-Feed gelieferten Kurztext (max. 900 Zeichen). 0 = Beschreibung ausblenden. Die Überschrift bleibt sichtbar.</p>
             <div class="design-field">
               <label for="design_image_fit">Artikelbild</label>
               <select id="design_image_fit" name="design_image_fit">
@@ -205,6 +207,9 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
                 <option value="left" {% if design.image_side == 'left' %}selected{% endif %}>Bild links / Text rechts</option>
                 <option value="right" {% if design.image_side == 'right' %}selected{% endif %}>Text links / Bild rechts</option>
               </select>
+            </div>
+            <div class="design-field" style="margin-top:10px">
+              <label class="toggle-tile"><input id="design_show_qr" name="design_show_qr" type="checkbox" {% if design.show_qr %}checked{% endif %}><span class="toggle-copy"><strong>QR-Code anzeigen</strong><small>Link zum vollständigen Originalartikel</small></span></label>
             </div>
             <div class="design-field" style="margin-top:10px">
               <label for="design_qr_position">QR-Code-Position</label>
@@ -436,6 +441,7 @@ function designPayload(){
     image_width:Number(document.getElementById("design_image_width").value),
     headline_size:Number(document.getElementById("design_headline_size").value),
     summary_size:Number(document.getElementById("design_summary_size").value),
+    summary_max_chars:Number(document.getElementById("design_summary_max_chars").value),
     clock_size:Number(document.getElementById("design_clock_size").value),
     content_top:Number(document.getElementById("design_content_top").value),
     content_bottom:Number(document.getElementById("design_content_bottom").value),
@@ -445,6 +451,7 @@ function designPayload(){
     image_fit:document.getElementById("design_image_fit").value,
     story_layout:document.getElementById("design_story_layout").value,
     show_clock:document.getElementById("design_show_clock").checked,
+    show_qr:document.getElementById("design_show_qr").checked,
     show_source:document.getElementById("design_show_source").checked,
     show_footer_names:document.getElementById("design_show_footer_names").checked,
     footer_names:lines
