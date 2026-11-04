@@ -3,6 +3,7 @@ import calendar
 import hashlib
 import hmac
 import html
+import json
 import logging
 import os
 import re
@@ -39,6 +40,7 @@ SLIDE_SECONDS = max(5, min(300, int(os.environ.get("SLIDE_SECONDS", "20"))))
 FEED_FILE = ROOT / "content" / "feeds.txt"
 ADMIN_SETTINGS_FILE = ROOT / "content" / "admin-settings.yaml"
 DESIGN_SETTINGS_FILE = ROOT / "content" / "ui-settings.yaml"
+PLAYLIST_STATE_FILE = ROOT / "content" / "playlist-state.json"
 DESIGN_LOGO_NAMES = ("design-logo.png", "design-logo.jpg", "design-logo.webp")
 DESIGN_FONT_PRESETS = ("news", "sans", "serif", "mono", "Calibri", "Arial", "Verdana")
 BINARY_EMOTIONS_ADDON = os.environ.get("BINARY_EMOTIONS_ADDON", "").strip().lower() in ("1", "true", "yes", "on")
@@ -56,6 +58,7 @@ if CFG.get("rss_url") or CFG.get("news_source_label"):
 app = Flask(__name__)
 lock = threading.Lock()
 refresh_lock = threading.Lock()
+playlist_lock = threading.Lock()
 snapshot = {"articles": [], "updated_at": None, "sources": [],
             "last_success_at": None, "failed_sources": []}
 cached_sources = {}
@@ -214,6 +217,12 @@ def read_design_settings(base_brand=None):
         "image_width": 56,
         "headline_size": 52,
         "summary_size": 28,
+        "clock_size": 36,
+        "content_top": 36,
+        "content_bottom": 56,
+        "qr_size": 135,
+        "image_side": "left",
+        "qr_position": "bottom-right",
         "image_fit": "contain",
         "story_layout": "split",
         "show_clock": True,
@@ -242,10 +251,18 @@ def read_design_settings(base_brand=None):
                 ("image_width", 30, 70),
                 ("headline_size", 20, 110),
                 ("summary_size", 12, 60),
+                ("clock_size", 18, 80),
+                ("content_top", 0, 120),
+                ("content_bottom", 0, 120),
+                ("qr_size", 80, 220),
             ):
                 settings[key] = _bounded_int(custom.get(key), settings[key], low, high)
             settings["image_fit"] = "cover" if custom.get("image_fit") == "cover" else "contain"
             settings["story_layout"] = "overlay" if custom.get("story_layout") == "overlay" else "split"
+            settings["image_side"] = "right" if custom.get("image_side") == "right" else "left"
+            settings["qr_position"] = custom.get("qr_position") if custom.get("qr_position") in (
+                "bottom-right", "bottom-left", "top-right", "top-left", "text"
+            ) else "bottom-right"
             for key in ("show_clock", "show_source", "show_footer_names"):
                 settings[key] = _design_bool(custom.get(key), settings[key])
             names = custom.get("footer_names")
@@ -288,6 +305,14 @@ def validate_design_form(form):
         "image_width": _bounded_int(form.get("design_image_width"), base["image_width"], 30, 70),
         "headline_size": _bounded_int(form.get("design_headline_size"), base["headline_size"], 20, 110),
         "summary_size": _bounded_int(form.get("design_summary_size"), base["summary_size"], 12, 60),
+        "clock_size": _bounded_int(form.get("design_clock_size"), base["clock_size"], 18, 80),
+        "content_top": _bounded_int(form.get("design_content_top"), base["content_top"], 0, 120),
+        "content_bottom": _bounded_int(form.get("design_content_bottom"), base["content_bottom"], 0, 120),
+        "qr_size": _bounded_int(form.get("design_qr_size"), base["qr_size"], 80, 220),
+        "image_side": "right" if form.get("design_image_side") == "right" else "left",
+        "qr_position": form.get("design_qr_position") if form.get("design_qr_position") in (
+            "bottom-right", "bottom-left", "top-right", "top-left", "text"
+        ) else "bottom-right",
         "image_fit": "cover" if form.get("design_image_fit") == "cover" else "contain",
         "story_layout": "overlay" if form.get("design_story_layout") == "overlay" else "split",
         "show_clock": form.get("design_show_clock") == "on",
@@ -495,7 +520,7 @@ def _refresh_locked():
     updated_sources = {}
     failed_sources = []
     successful_feeds = 0
-    for label, url in requested:
+    for feed_index, (label, url) in enumerate(requested):
         try:
             parsed = feedparser.parse(fetch_feed_bytes(url, USER_AGENT))
             if not parsed.entries:
@@ -511,6 +536,11 @@ def _refresh_locked():
             failed_sources.append(label or urlsplit(url).hostname or "Feed")
             # keep the last working stories if a feed temporarily fails.
             updated_sources[url] = cached_sources.get(url, [])
+        feed_id = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+        updated_sources[url] = [
+            {**article, "feed_index": feed_index, "feed_id": feed_id}
+            for article in updated_sources[url]
+        ]
         groups.append(updated_sources[url])
     cached_sources.clear()
     cached_sources.update(updated_sources)
@@ -697,6 +727,44 @@ def articles():
         "slide_seconds": runtime_settings()["slide_seconds"],
     })
     return jsonify(current)
+
+@app.get("/api/playlist-next")
+def playlist_next():
+    """One article per Anthias website visit, remembered across restarts.
+
+    In Anthias, set the website asset's duration instead of using the kiosk's
+    internal slide timer. Different ?feed=N URLs may have different durations.
+    """
+    raw_feed = request.args.get("feed")
+    if raw_feed is not None and not re.fullmatch(r"(0|[1-9][0-9]{0,2})", raw_feed):
+        abort(400)
+    chosen_feed = int(raw_feed) if raw_feed is not None else None
+    with lock:
+        available = [
+            dict(item) for item in snapshot["articles"]
+            if chosen_feed is None or item.get("feed_index") == chosen_feed
+        ]
+    if not available:
+        return jsonify({"error": "no articles for this feed"}), 404
+
+    key = ("all" if chosen_feed is None
+           else "feed:" + str(available[0].get("feed_id", chosen_feed)))
+    with playlist_lock:
+        try:
+            stored = json.loads(PLAYLIST_STATE_FILE.read_text(encoding="utf-8")) if PLAYLIST_STATE_FILE.is_file() else {}
+            if not isinstance(stored, dict):
+                stored = {}
+        except (OSError, ValueError):
+            LOG.warning("could not read playlist state; starting with first article")
+            stored = {}
+        last = stored.get(key)
+        ids = [article["id"] for article in available]
+        next_index = (ids.index(last) + 1) % len(ids) if last in ids else 0
+        selected = available[next_index]
+        stored[key] = selected["id"]
+        atomic_text_write(PLAYLIST_STATE_FILE, json.dumps(stored, sort_keys=True) + "\n", make_backup=False)
+    return jsonify({"article": {**selected, "qr_url": article_qr_url(selected)}, "count": len(available)})
+
 
 def article_qr_url(item):
     url = http_url(item.get("url"))
