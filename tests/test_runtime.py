@@ -77,6 +77,7 @@ class RuntimeTests(unittest.TestCase):
                 unavailable = client.get("/api/playlist-next?feed=99")
                 persisted = json.loads(main.PLAYLIST_STATE_FILE.read_text())
         self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.headers.get("Cache-Control"), "no-store")
         self.assertEqual([res.get_json()["article"]["id"] for res in (first, second, third)],
                          ["a", "b", "a"])
         self.assertEqual(independent.get_json()["article"]["id"], "c")
