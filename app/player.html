@@ -385,24 +385,53 @@ body.ui-design #summary.long-summary {
 body.ui-design .story.image-right:not(.overlay-layout) .visual { grid-column:2; grid-row:1; }
 body.ui-design .story.image-right:not(.overlay-layout) .copy { grid-column:1; grid-row:1; }
 body.ui-design .story.no-picture .copy { grid-column:1/-1 !important; grid-row:auto !important; }
-/* Size the entire white QR card, not just the QR image. Keep the caption inside its width. */
+/* Compact QR call-to-action: the orange ribbon replaces a tall white caption.
+   The QR image retains its quiet zone and remains independently scannable. */
 body.ui-design .article-qr {
-  padding:clamp(2px,calc(var(--ui-qr-size,135px) * .035),8px);
-  gap:clamp(2px,calc(var(--ui-qr-size,135px) * .025),5px);
-  max-width:calc(var(--ui-qr-size,135px) + 16px);
+  width:calc(var(--ui-qr-size,135px) + 8px);
+  max-width:none;
+  padding:0;
+  gap:0;
+  border-radius:9px;
+  overflow:hidden;
+  background:#fff;
 }
-body.ui-design .article-qr img { width:var(--ui-qr-size,135px); height:var(--ui-qr-size,135px); }
-body.ui-design .article-qr-note {
+body.ui-design .article-qr img {
   width:var(--ui-qr-size,135px);
+  height:var(--ui-qr-size,135px);
+  margin:4px;
+}
+body.ui-design .article-qr-note {
+  order:-1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  width:100%;
   max-width:100%;
-  font-size:clamp(7px,calc(var(--ui-qr-size,135px) * .075),15px);
+  padding:6px 3px;
+  gap:2px;
+  background:linear-gradient(115deg,#e67529 0%,#ce5319 100%);
+  color:#fff;
+  text-align:center;
   white-space:normal;
   overflow-wrap:break-word;
+  text-shadow:0 1px 1px rgba(62,29,13,.25);
 }
-body.ui-design .visual .article-qr { left:auto;right:12px;top:auto;bottom:12px; }
-body.ui-design .story.qr-bottom-left .visual .article-qr { left:12px;right:auto;top:auto;bottom:12px; }
-body.ui-design .story.qr-top-right .visual .article-qr { left:auto;right:12px;top:12px;bottom:auto; }
-body.ui-design .story.qr-top-left .visual .article-qr { left:12px;right:auto;top:12px;bottom:auto; }
+body.ui-design .article-qr-note strong {
+  color:#fff;
+  font-size:clamp(18px,calc(var(--ui-qr-size,135px) * .16),27px);
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.035em;
+}
+body.ui-design .article-qr-note span {
+  font-size:clamp(12px,calc(var(--ui-qr-size,135px) * .115),18px);
+  font-weight:750;
+  line-height:1.12;
+}
+/* Actual corner positioning is set on the card by placeArticleQr().
+   This also works when the image has just loaded or the preview changes. */
 @media(max-width:680px) and (orientation:portrait) {
   body.ui-design .story.image-right:not(.overlay-layout) .visual { grid-column:1;grid-row:1; }
   body.ui-design .story.image-right:not(.overlay-layout) .copy { grid-column:1;grid-row:2; }
@@ -435,7 +464,7 @@ body.ui-hide-source #header-source { display:none !important; }
     <div class="copy" id="copy"><h1 id="headline">Nachrichten werden geladen …</h1><p id="summary"></p>
       <div class="article-qr" id="article-qr">
         <img id="article-qr-image" alt="QR-Code zum Originalartikel">
-        <span class="article-qr-note"><strong>HIER</strong> zum ganzen Artikel</span>
+        <span class="article-qr-note"><strong>HIER</strong><span>zum ganzen Artikel</span></span>
       </div>
     </div>
   </article>
@@ -483,11 +512,27 @@ function setImage(id, url) {
   image.onerror = () => { if (image.dataset.url === url) image.classList.remove("ready"); };
   image.src = url;
 }
+function positionQrCard(qr, onPicture, requestedPosition) {
+  // Position the card itself, not the article container: the same rules
+  // apply in the live preview, on initial image load and on later changes.
+  if (!onPicture) {
+    for (const side of ["top","right","bottom","left"]) qr.style.removeProperty(side);
+    return;
+  }
+  const position = ["top-left","top-right","bottom-left","bottom-right"].includes(requestedPosition)
+    ? requestedPosition : "bottom-right";
+  qr.style.top = position.startsWith("top") ? "12px" : "auto";
+  qr.style.bottom = position.startsWith("bottom") ? "12px" : "auto";
+  qr.style.left = position.endsWith("left") ? "12px" : "auto";
+  qr.style.right = position.endsWith("right") ? "12px" : "auto";
+}
 function placeArticleQr(withPicture) {
   const chosen = activeSettings || {};
-  const target = el(withPicture && chosen.qr_position !== "text" ? "visual" : "copy");
+  const onPicture = withPicture && chosen.qr_position !== "text";
+  const target = el(onPicture ? "visual" : "copy");
   const qr = el("article-qr");
   if (qr.parentElement !== target) target.appendChild(qr);
+  positionQrCard(qr, onPicture, chosen.qr_position);
 }
 function fitArticleCopy() {
   if (!document.body.classList.contains("ui-design")) return;
@@ -603,8 +648,6 @@ function applySettings(data, remember=true) {
   el("story").classList.toggle("overlay-layout", data.story_layout === "overlay");
   const storyElement=el("story");
   storyElement.classList.toggle("image-right", data.image_side === "right");
-  for (const placement of ("bottom-left","top-right","top-left"))
-    storyElement.classList.toggle("qr-"+placement,data.qr_position === placement);
   document.body.classList.toggle("ui-hide-clock", data.show_clock === false);
   document.body.classList.toggle("ui-hide-source", data.show_source === false);
   const rootStyle = document.documentElement.style;
