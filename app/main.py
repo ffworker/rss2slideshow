@@ -763,7 +763,9 @@ def playlist_next():
         selected = available[next_index]
         stored[key] = selected["id"]
         atomic_text_write(PLAYLIST_STATE_FILE, json.dumps(stored, sort_keys=True) + "\n", make_backup=False)
-    return jsonify({"article": {**selected, "qr_url": article_qr_url(selected)}, "count": len(available)})
+    response = jsonify({"article": {**selected, "qr_url": article_qr_url(selected)}, "count": len(available)})
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def article_qr_url(item):
