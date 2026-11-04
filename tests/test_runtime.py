@@ -106,8 +106,8 @@ class RuntimeTests(unittest.TestCase):
             self.skipTest("Node.js is not available")
         player = (ROOT / "app/player.html").read_text(encoding="utf-8")
         match = re.search(
-            r"(function positionQrCard\\(qr, onPicture, requestedPosition\\) \\{.*?\\n\\})"
-            r"\\nfunction placeArticleQr\\(",
+            r"(function positionQrCard\(qr, onPicture, requestedPosition\) \{.*?\n\})"
+            r"\nfunction placeArticleQr\(",
             player, re.DOTALL,
         )
         self.assertIsNotNone(match)
