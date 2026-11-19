@@ -777,6 +777,60 @@ def playlist_next():
     return response
 
 
+@app.route("/api/playlist-resume", methods=["GET", "POST"])
+def playlist_resume():
+    """Only acknowledge an article after its full visible interval.
+
+    Read-only GETs (including reloads) return the same uncompleted article.
+    POST acknowledges the displayed ID and returns the next article. State is
+    separate from the legacy one-article-per-visit mode.
+    """
+    raw_feed = request.args.get("feed")
+    if raw_feed is not None and not re.fullmatch(r"(0|[1-9][0-9]{0,2})", raw_feed):
+        abort(400)
+    chosen_feed = int(raw_feed) if raw_feed is not None else None
+    completed = None
+    if request.method == "POST":
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict) or not isinstance(body.get("completed"), str) or not body["completed"]:
+            abort(400)
+        completed = body["completed"]
+    with lock:
+        available = [
+            dict(item) for item in snapshot["articles"]
+            if chosen_feed is None or item.get("feed_index") == chosen_feed
+        ]
+    if not available:
+        return jsonify({"error": "no articles for this feed"}), 404
+
+    key = ("resume:all" if chosen_feed is None
+           else "resume:feed:" + str(available[0].get("feed_id", chosen_feed)))
+    ids = [article["id"] for article in available]
+    with playlist_lock:
+        try:
+            stored = json.loads(PLAYLIST_STATE_FILE.read_text(encoding="utf-8")) if PLAYLIST_STATE_FILE.is_file() else {}
+            if not isinstance(stored, dict):
+                stored = {}
+        except (OSError, ValueError):
+            LOG.warning("could not read playlist state; starting with first article")
+            stored = {}
+        last = stored.get(key)
+        # A removed article cannot advance the current feed. Repeated
+        # acknowledgements of the same ID are harmless after a lost response.
+        if completed in ids and completed != last:
+            last = completed
+            stored[key] = last
+            atomic_text_write(PLAYLIST_STATE_FILE, json.dumps(stored, sort_keys=True) + "\n", make_backup=False)
+        next_index = (ids.index(last) + 1) % len(ids) if last in ids else 0
+        selected = available[next_index]
+    response = jsonify({
+        "article": {**selected, "qr_url": article_qr_url(selected)},
+        "count": len(available), "position": next_index + 1,
+    })
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 def article_qr_url(item):
     url = http_url(item.get("url"))
     if not url or len(url.encode("utf-8")) > 512:

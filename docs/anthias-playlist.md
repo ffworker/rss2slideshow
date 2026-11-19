@@ -3,6 +3,33 @@
 This is an **optional single-screen integration**. The normal `/kiosk` remains an
 independent, continuously rotating news display.
 
+## Resumable multi-article visits
+
+Use `/kiosk?playlist=resume` for a website asset that should show several
+articles per visit at the normal kiosk slide interval (for example 15 seconds).
+Optionally append `&feed=0` to select one feed.
+
+Anthias still controls the total website asset duration. RSS2Slideshow saves
+the last **fully displayed** article in `content/playlist-state.json`. When the
+website is loaded again, it starts at the next article, replaying any article
+interrupted before its configured interval expired. It wraps after the last
+available article. The counter shows the position among all selected articles.
+
+Use one screen per shared resume cursor (all feeds or an individual feed).
+The player handles visibility and page lifecycle events when a webview is
+reused. If the player keeps an invisible webview running without signaling a
+visibility change, it cannot reliably detect the interruption: confirm actual
+transitions on the TV. Do not open the resume URL in extra browser tabs during
+playback. Ordinary `/kiosk` previews do not advance this cursor. If articles
+disappear or change order during RSS refresh, the cursor follows the surviving
+article ID; if it disappears, playback begins at the first available article.
+
+To test a 5-article feed at 15 seconds per article, set the Anthias website
+duration to 65 seconds and confirm the next visit starts at article 5 and that
+article 5 gets a full 15 seconds before switching. No Anthias Hub code change
+is needed. Temporarily disable the website asset during guarded updates to
+avoid concurrent writes to the backed-up cursor file.
+
 ## Why use playlist mode?
 
 When a website appears between images/videos in an Anthias playlist, showing

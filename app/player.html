@@ -484,8 +484,10 @@ let sourceInHeader = false, serverSettings = null, previewDesign = null, activeS
 let displayedStory = null;
 const playlistParams = new URLSearchParams(location.search);
 const playlistMode = playlistParams.get("playlist") === "1";
+const resumeMode = playlistParams.get("playlist") === "resume";
 const playlistFeed = playlistParams.get("feed");
 let playlistSelectionReady = false, playlistSelectionPending = false, playlistLastSelection = -Infinity;
+let resumeTimer = null, resumePending = false, resumeReady = false, resumeEpoch = 0, resumeSuspended = false;
 let fitFrame = 0;
 
 function now() {
@@ -748,7 +750,9 @@ function applySettings(data, remember=true) {
   }
   const wanted = Number(data.slide_seconds);
   const next = Number.isFinite(wanted) && wanted >= 5 ? wanted : 20;
-  if (timer === null || seconds !== next) {
+  if (resumeMode) {
+    seconds = next;
+  } else if (timer === null || seconds !== next) {
     seconds = next;
     if (timer) clearInterval(timer);
     timer = setInterval(show, seconds*1000);
@@ -773,6 +777,60 @@ async function choosePlaylistArticle() {
     playlistSelectionPending=false;
   }
 }
+// The resume cursor belongs to the last fully displayed article, not the
+// most recently loaded one. A new visit replays an interrupted article.
+function resumeVisible() {
+  return !document.hidden && !resumeSuspended;
+}
+function stopResumeVisit() {
+  resumeEpoch++;
+  resumeReady = false;
+  clearTimeout(resumeTimer);
+  resumeTimer = null;
+}
+function scheduleResume(completed, delay) {
+  clearTimeout(resumeTimer);
+  const epoch = resumeEpoch;
+  resumeTimer = setTimeout(() => {
+    resumeTimer = null;
+    if (epoch === resumeEpoch && resumeVisible()) loadResumeArticle(completed);
+  }, delay);
+}
+async function loadResumeArticle(completed = null) {
+  if (!serverSettings || !resumeVisible() || resumePending) return;
+  const epoch = resumeEpoch;
+  resumePending = true;
+  try {
+    const query = playlistFeed === null ? "" : "?feed="+encodeURIComponent(playlistFeed);
+    const options = {cache:"no-store"};
+    if (completed !== null) {
+      options.method = "POST";
+      options.headers = {"Content-Type":"application/json"};
+      options.body = JSON.stringify({completed});
+    }
+    const response = await fetch("/api/playlist-resume"+query, options);
+    if (!response.ok) throw Error("playlist resume HTTP "+response.status);
+    const data = await response.json();
+    if (!data.article) throw Error("playlist has no article");
+    if (epoch !== resumeEpoch || !resumeVisible()) return;
+    articles = [data.article];
+    index = 0;
+    show();
+    el("counter").textContent = String(data.position).padStart(2,"0") +
+      " / " + String(data.count).padStart(2,"0");
+    resumeReady = true;
+    scheduleResume(data.article.id, seconds*1000);
+  } catch (error) {
+    console.warn("playlist resume failed", error);
+    if (epoch === resumeEpoch && resumeVisible()) {
+      // Keep the current article and retry the same acknowledgement.
+      scheduleResume(completed, 5000);
+    }
+  } finally {
+    resumePending = false;
+    if (epoch !== resumeEpoch && resumeVisible() && !resumeReady) loadResumeArticle();
+  }
+}
 async function update() {
   try {
     const response = await fetch("/api/articles",{cache:"no-store"});
@@ -782,6 +840,10 @@ async function update() {
     // Keep unsaved iframe edits visible across the normal 30-second RSS refresh.
     if (previewDesign) applySettings({...data, ...previewDesign, design_enabled:true}, false);
     const incoming = Array.isArray(data.articles) ? data.articles : [];
+    if (resumeMode) {
+      if (!resumeReady && resumeTimer === null) await loadResumeArticle();
+      return;
+    }
     if (playlistMode) {
       // Anthias owns the asset duration; only advance when the web asset enters.
       if (!playlistSelectionReady) await choosePlaylistArticle();
@@ -815,10 +877,27 @@ window.addEventListener("message", event => {
   applySettings({...serverSettings, ...previewDesign, design_enabled:true}, false);
 });
 document.addEventListener("visibilitychange",()=>{
+  if (resumeMode) {
+    if (document.hidden) stopResumeVisit();
+    else if (!resumeReady) loadResumeArticle();
+    return;
+  }
   // A surviving Anthias webview may be hidden rather than destroyed between assets.
   if (playlistMode && !document.hidden && playlistSelectionReady &&
       performance.now()-playlistLastSelection>2000) {
     choosePlaylistArticle().catch(error=>console.warn("playlist reentry failed",error));
+  }
+});
+window.addEventListener("pagehide",()=>{
+  if (resumeMode) {
+    resumeSuspended = true;
+    stopResumeVisit();
+  }
+});
+window.addEventListener("pageshow",()=>{
+  if (resumeMode && resumeSuspended) {
+    resumeSuspended = false;
+    loadResumeArticle();
   }
 });
 window.addEventListener("resize",requestTextFit);
