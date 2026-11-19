@@ -296,8 +296,8 @@ body.featured-layout #counter { font-size:clamp(16px,1.1vw,24px); }
   }
   body.featured-layout #footer-names {
     width:100%;
-    /* Use natural label widths, not equal columns: every divider gets
-       the same inset on both sides, even for different name lengths. */
+    /* Keep natural label widths and share the remaining row width equally.
+       This spreads labels across the footer with symmetric divider spacing. */
     display:flex;
     flex-wrap:nowrap;
     justify-content:center;
@@ -309,7 +309,7 @@ body.featured-layout #counter { font-size:clamp(16px,1.1vw,24px); }
   }
   body.featured-layout #footer-names .company {
     display:flex;
-    flex:0 1 auto;
+    flex:1 1 auto;
     align-items:center;
     justify-content:center;
     white-space:normal;
