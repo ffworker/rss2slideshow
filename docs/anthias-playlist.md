@@ -5,9 +5,19 @@ independent, continuously rotating news display.
 
 ## Resumable multi-article visits
 
-Use `/kiosk?playlist=resume` for a website asset that should show several
-articles per visit at the normal kiosk slide interval (for example 15 seconds).
-Optionally append `&feed=0` to select one feed.
+Enable **Wiedergabe nach Unterbrechung fortsetzen** in /admin under Anzeige
+and save. The normal /kiosk URL now resumes by default, without changing the
+Anthias asset URL. Reload the kiosk once after changing this option. Existing
+installations default to off. The admin preview uses ?preview=1 so it cannot
+advance the production cursor. Explicit ?playlist=resume still works for an
+asset (optionally with &feed=0); ?playlist=1 still selects the legacy single
+article mode. ?playlist=standalone forces independent playback.
+
+Change **Artikel wechseln nach** in the same admin section to set the
+article interval (5–300 seconds). In the resumable mode the player reads the
+latest duration with every next article; an article already on screen retains
+its original interval. Anthias asset duration is independent and must exceed
+the article interval plus loading time to allow progress.
 
 Anthias still controls the total website asset duration. RSS2Slideshow saves
 the last **fully displayed** article in `content/playlist-state.json`. When the

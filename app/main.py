@@ -13,7 +13,7 @@ import time
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 import feedparser
 import yaml
@@ -78,6 +78,7 @@ def runtime_settings():
         "refresh_minutes": _bounded_int(CFG.get("refresh_minutes"), max(1, REFRESH_SECONDS // 60), 1, 1440),
         "news_images": bool(CFG.get("news_images", False)),
         "slide_seconds": SLIDE_SECONDS,
+        "resume_playback": CFG.get("resume_playback") is True,
     }
     if ADMIN_SETTINGS_FILE.is_file():
         try:
@@ -86,6 +87,8 @@ def runtime_settings():
                 settings["max_articles"] = _bounded_int(overrides.get("max_articles"), settings["max_articles"], 1, 30)
                 settings["refresh_minutes"] = _bounded_int(overrides.get("refresh_minutes"), settings["refresh_minutes"], 1, 1440)
                 settings["slide_seconds"] = _bounded_int(overrides.get("slide_seconds"), settings["slide_seconds"], 5, 300)
+                if isinstance(overrides.get("resume_playback"), bool):
+                    settings["resume_playback"] = overrides["resume_playback"]
                 if isinstance(overrides.get("news_images"), bool):
                     settings["news_images"] = overrides["news_images"]
         except (OSError, yaml.YAMLError):
@@ -166,6 +169,7 @@ def write_admin_settings(values):
     text = (
         "# Managed by /admin. These values override config.yaml for the running kiosk.\n"
         f"slide_seconds: {values['slide_seconds']}\n"
+        f"resume_playback: {'true' if values.get('resume_playback') else 'false'}\n"
         f"max_articles: {values['max_articles']}\n"
         f"refresh_minutes: {values['refresh_minutes']}\n"
         f"news_images: {'true' if values['news_images'] else 'false'}\n"
@@ -433,6 +437,12 @@ def render_admin_page(message="", error="", feed_rows=None, feed_tests=None):
     # Prefer the dedicated Flask kiosk endpoint for both iframe and open links.
     configured_kiosk_path = (os.environ.get("ADMIN_KIOSK_PATH") or "").strip()
     kiosk_path = url_for("kiosk") if configured_kiosk_path in ("", "/") else configured_kiosk_path
+    # The editor and its open links must never acknowledge production articles.
+    parts = urlsplit(kiosk_path)
+    params = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True)
+              if key not in ("playlist", "preview")]
+    params.append(("preview", "1"))
+    kiosk_path = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(params), parts.fragment))
     response = make_response(render_template(
         "admin.html",
         csrf=admin_form_token(),
@@ -607,6 +617,7 @@ def admin():
                     "max_articles": _bounded_int(request.form.get("max_articles"), 5, 1, 30),
                     "refresh_minutes": _bounded_int(request.form.get("refresh_minutes"), 10, 1, 1440),
                     "news_images": request.form.get("news_images") == "on",
+                    "resume_playback": request.form.get("resume_playback") == "on",
                 }
                 write_admin_settings(values)
                 message = "Anzeige-Einstellungen gespeichert."
@@ -728,12 +739,14 @@ def articles():
         }
     brand_settings = read_brand(ROOT, CFG)
     design_settings = read_design_settings(brand_settings)
+    playback = runtime_settings()
     current.update({
         "timezone": DISPLAY_TZ,
         "server_time_ms": int(time.time() * 1000),
         **brand_settings,
         **design_settings,
-        "slide_seconds": runtime_settings()["slide_seconds"],
+        "slide_seconds": playback["slide_seconds"],
+        "resume_playback": playback["resume_playback"],
     })
     return jsonify(current)
 
@@ -815,9 +828,10 @@ def playlist_resume():
             LOG.warning("could not read playlist state; starting with first article")
             stored = {}
         last = stored.get(key)
-        # A removed article cannot advance the current feed. Repeated
-        # acknowledgements of the same ID are harmless after a lost response.
-        if completed in ids and completed != last:
+        # Only the currently expected article can advance this cursor.
+        # Ignore stale, out-of-order and duplicate acknowledgements.
+        expected_index = (ids.index(last) + 1) % len(ids) if last in ids else 0
+        if completed == ids[expected_index] and completed != last:
             last = completed
             stored[key] = last
             atomic_text_write(PLAYLIST_STATE_FILE, json.dumps(stored, sort_keys=True) + "\n", make_backup=False)
@@ -826,6 +840,7 @@ def playlist_resume():
     response = jsonify({
         "article": {**selected, "qr_url": article_qr_url(selected)},
         "count": len(available), "position": next_index + 1,
+        "slide_seconds": runtime_settings()["slide_seconds"],
     })
     response.headers["Cache-Control"] = "no-store"
     return response

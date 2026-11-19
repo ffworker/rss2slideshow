@@ -415,7 +415,12 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
         <div class="field">
           <label for="slide_seconds">Artikel wechseln nach</label>
           <input id="slide_seconds" name="slide_seconds" type="number" min="5" max="300" value="{{ settings.slide_seconds }}">
-          <div class="muted">Sekunden, 5–300</div>
+          <div class="actions" style="justify-content:flex-start;gap:6px;margin-top:7px">
+            {% for interval in (10, 15, 20, 30) %}
+              <button class="secondary" type="button" onclick="document.getElementById('slide_seconds').value={{ interval }}">{{ interval }} s</button>
+            {% endfor %}
+          </div>
+          <div class="muted">Sekunden, 5–300. Im Fortsetzungsmodus gilt der neue Wert ab dem nächsten Artikel.</div>
         </div>
         <div class="field">
           <label for="max_articles">Artikel pro Feed</label>
@@ -428,6 +433,7 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
           <div class="muted">Minuten</div>
         </div>
       </div>
+      <label class="toggle-tile display-image-toggle"><input type="checkbox" name="resume_playback" {% if settings.resume_playback %}checked{% endif %}><span class="toggle-copy"><strong>Wiedergabe nach Unterbrechung fortsetzen</strong><small>Für Anthias: beim nächsten Kiosk-Aufruf am letzten nicht vollständig gezeigten Artikel fortsetzen. Die URL bleibt unverändert. Nach Änderung den Kiosk einmal neu laden.</small></span></label>
       <label class="toggle-tile display-image-toggle"><input type="checkbox" name="news_images" {% if settings.news_images %}checked{% endif %}><span class="toggle-copy"><strong>RSS-Bilder anzeigen</strong><small>Wenn der Feed Bilder liefert</small></span></label>
       <div class="actions">
         <button class="primary" type="submit" name="action" value="save_settings">Anzeige speichern</button>

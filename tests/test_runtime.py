@@ -104,6 +104,13 @@ class RuntimeTests(unittest.TestCase):
 
                 self.assertEqual(read()["article"]["id"], "1")
                 self.assertEqual(read()["position"], 1)
+                with patch.object(main, "runtime_settings", return_value={"slide_seconds": 10}):
+                    self.assertEqual(read()["slide_seconds"], 10)
+                with patch.object(main, "runtime_settings", return_value={"slide_seconds": 20}):
+                    self.assertEqual(read()["slide_seconds"], 20)
+                self.assertFalse(main.PLAYLIST_STATE_FILE.exists())
+                # Out-of-order requests cannot skip ahead.
+                self.assertEqual(client.post(url, json={"completed": "3"}).get_json()["position"], 1)
                 self.assertFalse(main.PLAYLIST_STATE_FILE.exists())
                 for n in range(1, 5):
                     response = client.post(url, json={"completed": str(n)})
@@ -114,6 +121,7 @@ class RuntimeTests(unittest.TestCase):
                 self.assertEqual(read()["article"]["id"], "5")
                 self.assertEqual(read()["count"], 5)
                 self.assertEqual(client.post(url, json={"completed": "4"}).get_json()["position"], 5)
+                self.assertEqual(client.post(url, json={"completed": "2"}).get_json()["position"], 5)
                 self.assertEqual(client.post(url, json={"completed": "5"}).get_json()["position"], 1)
                 self.assertEqual(read()["position"], 1)
                 self.assertEqual(client.get("/api/playlist-resume?feed=1").get_json()["article"]["id"], "other")
@@ -180,6 +188,9 @@ assert.deepEqual([style.top, style.bottom, style.left, style.right],
     def test_bistro_player_has_website_one_article_mode(self):
         player = (ROOT / "app/player.html").read_text(encoding="utf-8")
         self.assertIn('playlistParams.get("playlist") === "1"', player)
+        self.assertIn('data.resume_playback === true', player)
+        self.assertIn('playlistParams.get("preview") === "1"', player)
+        self.assertIn('Number(data.slide_seconds)', player)
         self.assertIn('"/api/playlist-next"', player)
         self.assertIn('visibilitychange', player)
         self.assertIn('var(--ui-content-top', player)

@@ -61,8 +61,8 @@ class AdminTests(unittest.TestCase):
                 self.assertEqual(page.status_code, 200)
                 self.assertEqual(kiosk.status_code, 200)
                 markup = page.get_data(as_text=True)
-                self.assertIn('id="design-preview" class="preview-frame" src="/kiosk"', markup)
-                self.assertEqual(markup.count('href="/kiosk"'), 2)
+                self.assertIn('id="design-preview" class="preview-frame" src="/kiosk?preview=1"', markup)
+                self.assertEqual(markup.count('href="/kiosk?preview=1"'), 2)
 
     def test_explicit_reverse_proxy_kiosk_path_remains_configurable(self):
         with patch.dict(
@@ -74,8 +74,8 @@ class AdminTests(unittest.TestCase):
                 response = client.get("/admin", headers=auth_header())
         self.assertEqual(response.status_code, 200)
         markup = response.get_data(as_text=True)
-        self.assertIn('src="/display/kiosk"', markup)
-        self.assertEqual(markup.count('href="/display/kiosk"'), 2)
+        self.assertIn('src="/display/kiosk?preview=1"', markup)
+        self.assertEqual(markup.count('href="/display/kiosk?preview=1"'), 2)
 
     def test_authenticated_admin_shows_failed_feed_names(self):
         with patch.dict(os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}), \
@@ -234,6 +234,7 @@ class AdminTests(unittest.TestCase):
                             "csrf": main.admin_form_token(),
                             "action": "save_settings",
                             "slide_seconds": "35",
+                            "resume_playback": "on",
                             "max_articles": "9",
                             "refresh_minutes": "7",
                             "news_images": "on",
@@ -241,8 +242,24 @@ class AdminTests(unittest.TestCase):
                     )
                 saved = yaml.safe_load(admin_file.read_text(encoding="utf-8"))
                 active = main.runtime_settings()
+                with main.app.test_client() as client:
+                    api = client.get("/api/articles").get_json()
+                    markup = client.get("/admin", headers=auth_header()).get_data(as_text=True)
+                    client.post("/admin", headers=auth_header(), data={
+                        "csrf": main.admin_form_token(), "action": "save_settings",
+                        "slide_seconds": "10", "max_articles": "9", "refresh_minutes": "7",
+                    })
+                    disabled = client.get("/api/articles").get_json()
             self.assertEqual(response.status_code, 200)
             self.assertEqual(saved["slide_seconds"], 35)
+            self.assertTrue(saved["resume_playback"])
+            self.assertTrue(active["resume_playback"])
+            self.assertTrue(api["resume_playback"])
+            self.assertEqual(api["slide_seconds"], 35)
+            self.assertIn('src="/kiosk?preview=1"', markup)
+            self.assertEqual(markup.count('href="/kiosk?preview=1"'), 2)
+            self.assertFalse(disabled["resume_playback"])
+            self.assertEqual(disabled["slide_seconds"], 10)
             self.assertEqual(saved["max_articles"], 9)
             self.assertEqual(saved["refresh_minutes"], 7)
             self.assertTrue(saved["news_images"])
