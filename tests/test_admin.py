@@ -61,8 +61,8 @@ class AdminTests(unittest.TestCase):
                 self.assertEqual(page.status_code, 200)
                 self.assertEqual(kiosk.status_code, 200)
                 markup = page.get_data(as_text=True)
-                self.assertIn('id="design-preview" class="preview-frame" src="/kiosk"', markup)
-                self.assertEqual(markup.count('href="/kiosk"'), 2)
+                self.assertIn('id="design-preview" class="preview-frame" src="/kiosk?preview=1"', markup)
+                self.assertEqual(markup.count('href="/kiosk?preview=1"'), 2)
 
     def test_explicit_reverse_proxy_kiosk_path_remains_configurable(self):
         with patch.dict(
@@ -74,8 +74,8 @@ class AdminTests(unittest.TestCase):
                 response = client.get("/admin", headers=auth_header())
         self.assertEqual(response.status_code, 200)
         markup = response.get_data(as_text=True)
-        self.assertIn('src="/display/kiosk"', markup)
-        self.assertEqual(markup.count('href="/display/kiosk"'), 2)
+        self.assertIn('src="/display/kiosk?preview=1"', markup)
+        self.assertEqual(markup.count('href="/display/kiosk?preview=1"'), 2)
 
     def test_authenticated_admin_shows_failed_feed_names(self):
         with patch.dict(os.environ, {"ADMIN_USER": "admin", "ADMIN_PASSWORD": "secret"}), \

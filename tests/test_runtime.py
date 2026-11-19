@@ -109,6 +109,9 @@ class RuntimeTests(unittest.TestCase):
                 with patch.object(main, "runtime_settings", return_value={"slide_seconds": 20}):
                     self.assertEqual(read()["slide_seconds"], 20)
                 self.assertFalse(main.PLAYLIST_STATE_FILE.exists())
+                # Out-of-order requests cannot skip ahead.
+                self.assertEqual(client.post(url, json={"completed": "3"}).get_json()["position"], 1)
+                self.assertFalse(main.PLAYLIST_STATE_FILE.exists())
                 for n in range(1, 5):
                     response = client.post(url, json={"completed": str(n)})
                     self.assertEqual(response.status_code, 200)
@@ -118,6 +121,7 @@ class RuntimeTests(unittest.TestCase):
                 self.assertEqual(read()["article"]["id"], "5")
                 self.assertEqual(read()["count"], 5)
                 self.assertEqual(client.post(url, json={"completed": "4"}).get_json()["position"], 5)
+                self.assertEqual(client.post(url, json={"completed": "2"}).get_json()["position"], 5)
                 self.assertEqual(client.post(url, json={"completed": "5"}).get_json()["position"], 1)
                 self.assertEqual(read()["position"], 1)
                 self.assertEqual(client.get("/api/playlist-resume?feed=1").get_json()["article"]["id"], "other")

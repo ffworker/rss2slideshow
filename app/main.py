@@ -438,12 +438,11 @@ def render_admin_page(message="", error="", feed_rows=None, feed_tests=None):
     configured_kiosk_path = (os.environ.get("ADMIN_KIOSK_PATH") or "").strip()
     kiosk_path = url_for("kiosk") if configured_kiosk_path in ("", "/") else configured_kiosk_path
     # The editor and its open links must never acknowledge production articles.
-    if settings["resume_playback"]:
-        parts = urlsplit(kiosk_path)
-        params = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True)
-                  if key not in ("playlist", "preview")]
-        params.append(("preview", "1"))
-        kiosk_path = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(params), parts.fragment))
+    parts = urlsplit(kiosk_path)
+    params = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True)
+              if key not in ("playlist", "preview")]
+    params.append(("preview", "1"))
+    kiosk_path = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(params), parts.fragment))
     response = make_response(render_template(
         "admin.html",
         csrf=admin_form_token(),
@@ -829,9 +828,10 @@ def playlist_resume():
             LOG.warning("could not read playlist state; starting with first article")
             stored = {}
         last = stored.get(key)
-        # A removed article cannot advance the current feed. Repeated
-        # acknowledgements of the same ID are harmless after a lost response.
-        if completed in ids and completed != last:
+        # Only the currently expected article can advance this cursor.
+        # Ignore stale, out-of-order and duplicate acknowledgements.
+        expected_index = (ids.index(last) + 1) % len(ids) if last in ids else 0
+        if completed == ids[expected_index] and completed != last:
             last = completed
             stored[key] = last
             atomic_text_write(PLAYLIST_STATE_FILE, json.dumps(stored, sort_keys=True) + "\n", make_backup=False)

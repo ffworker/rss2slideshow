@@ -16,6 +16,12 @@ jobs:
       - run: cp config.example.yaml config.yaml
       - run: python -m compileall -q app addons
       - run: python -m unittest discover -s tests -v
+      - name: Install isolated browser test dependencies
+        run: |
+          pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Browser playback integration (real HTTP, synthetic feed)
+        run: PYTHONPATH=. python tests/browser_playback.py
       - name: Smoke-test Gunicorn WSGI on localhost
         run: |
           set -euo pipefail
