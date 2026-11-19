@@ -86,6 +86,46 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(bad.status_code, 400)
         self.assertEqual(unavailable.status_code, 404)
 
+    def test_resume_only_advances_after_acknowledgement(self):
+        items = [
+            {"id": str(i), "feed_index": 0, "feed_id": "news", "title": str(i)}
+            for i in range(1, 6)
+        ]
+        items.append({"id": "other", "feed_index": 1, "feed_id": "other"})
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+            main, "PLAYLIST_STATE_FILE", Path(tmp) / "playlist-state.json"
+        ), patch.dict(main.snapshot, {"articles": items}):
+            url = "/api/playlist-resume?feed=0"
+            with main.app.test_client() as client:
+                def read():
+                    response = client.get(url)
+                    self.assertEqual(response.headers["Cache-Control"], "no-store")
+                    return response.get_json()
+
+                self.assertEqual(read()["article"]["id"], "1")
+                self.assertEqual(read()["position"], 1)
+                self.assertFalse(main.PLAYLIST_STATE_FILE.exists())
+                for n in range(1, 5):
+                    response = client.post(url, json={"completed": str(n)})
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response.get_json()["position"], n + 1)
+                # Simulate Anthias interrupting the fifth article and reloading.
+                self.assertEqual(read()["article"]["id"], "5")
+                self.assertEqual(read()["article"]["id"], "5")
+                self.assertEqual(read()["count"], 5)
+                self.assertEqual(client.post(url, json={"completed": "4"}).get_json()["position"], 5)
+                self.assertEqual(client.post(url, json={"completed": "5"}).get_json()["position"], 1)
+                self.assertEqual(read()["position"], 1)
+                self.assertEqual(client.get("/api/playlist-resume?feed=1").get_json()["article"]["id"], "other")
+                self.assertEqual(client.get("/api/playlist-resume?feed=../etc").status_code, 400)
+                self.assertEqual(client.post(url, json={}).status_code, 400)
+                self.assertEqual(client.post(url, json={"completed": "removed"}).get_json()["position"], 1)
+                # The legacy per-visit mode is unaffected.
+                self.assertEqual(client.get("/api/playlist-next?feed=0").get_json()["article"]["id"], "1")
+                persisted = json.loads(main.PLAYLIST_STATE_FILE.read_text())
+                self.assertEqual(persisted["resume:feed:news"], "5")
+                self.assertEqual(persisted["feed:news"], "1")
+
     def test_browser_scripts_are_parseable_javascript(self):
         if not shutil.which("node"):
             self.skipTest("Node.js is not available")
