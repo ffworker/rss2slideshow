@@ -296,25 +296,27 @@ body.featured-layout #counter { font-size:clamp(16px,1.1vw,24px); }
   }
   body.featured-layout #footer-names {
     width:100%;
-    display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    column-gap:0;
-    row-gap:0;
-    justify-items:stretch;
-    align-items:center;
+    /* Use natural label widths, not equal columns: every divider gets
+       the same inset on both sides, even for different name lengths. */
+    display:flex;
+    flex-wrap:nowrap;
+    justify-content:center;
+    align-items:stretch;
+    gap:0;
     font-size:clamp(18px,1.5vw,30px);
     line-height:1.12;
     letter-spacing:-.02em;
   }
   body.featured-layout #footer-names .company {
     display:flex;
+    flex:0 1 auto;
     align-items:center;
     justify-content:center;
     white-space:normal;
     text-align:center;
     min-width:0;
-    padding:0 clamp(3px,.45vw,10px);
-    overflow-wrap:normal;
+    padding:0 clamp(8px,1.15vw,22px);
+    overflow-wrap:anywhere;
   }
   body.featured-layout #footer-names .company + .company {
     border-left:2px solid var(--accent);
