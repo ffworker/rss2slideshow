@@ -415,6 +415,11 @@ footer{margin-top:22px;color:#838177;font-size:11px;text-align:center}
         <div class="field">
           <label for="slide_seconds">Artikel wechseln nach</label>
           <input id="slide_seconds" name="slide_seconds" type="number" min="5" max="300" value="{{ settings.slide_seconds }}">
+          <div class="actions" style="justify-content:flex-start;gap:6px;margin-top:7px">
+            {% for interval in (10, 15, 20, 30) %}
+              <button class="secondary" type="button" onclick="document.getElementById('slide_seconds').value={{ interval }}">{{ interval }} s</button>
+            {% endfor %}
+          </div>
           <div class="muted">Sekunden, 5–300. Im Fortsetzungsmodus gilt der neue Wert ab dem nächsten Artikel.</div>
         </div>
         <div class="field">
