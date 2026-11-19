@@ -483,8 +483,10 @@ let currentFontUrl = "", currentFontName = "", fontRequest = 0, photoRequest = 0
 let sourceInHeader = false, serverSettings = null, previewDesign = null, activeSettings = null;
 let displayedStory = null;
 const playlistParams = new URLSearchParams(location.search);
-const playlistMode = playlistParams.get("playlist") === "1";
-const resumeMode = playlistParams.get("playlist") === "resume";
+const playbackPreview = playlistParams.get("preview") === "1";
+const playlistMode = !playbackPreview && playlistParams.get("playlist") === "1";
+let resumeMode = !playbackPreview && playlistParams.get("playlist") === "resume";
+let playbackModeResolved = playbackPreview || playlistParams.has("playlist");
 const playlistFeed = playlistParams.get("feed");
 let playlistSelectionReady = false, playlistSelectionPending = false, playlistLastSelection = -Infinity;
 let resumeTimer = null, resumePending = false, resumeReady = false, resumeEpoch = 0, resumeSuspended = false;
@@ -819,6 +821,10 @@ async function loadResumeArticle(completed = null) {
     el("counter").textContent = String(data.position).padStart(2,"0") +
       " / " + String(data.count).padStart(2,"0");
     resumeReady = true;
+    // Read the current interval with every article, so editor changes take
+    // effect on the next slide without reloading or waiting for RSS refresh.
+    const interval = Number(data.slide_seconds);
+    if (Number.isFinite(interval) && interval >= 5 && interval <= 300) seconds = interval;
     scheduleResume(data.article.id, seconds*1000);
   } catch (error) {
     console.warn("playlist resume failed", error);
@@ -836,6 +842,10 @@ async function update() {
     const response = await fetch("/api/articles",{cache:"no-store"});
     if (!response.ok) throw Error("HTTP "+response.status);
     const data = await response.json();
+    if (!playbackModeResolved) {
+      resumeMode = data.resume_playback === true;
+      playbackModeResolved = true;
+    }
     applySettings(data, true);
     // Keep unsaved iframe edits visible across the normal 30-second RSS refresh.
     if (previewDesign) applySettings({...data, ...previewDesign, design_enabled:true}, false);
